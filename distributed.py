@@ -367,7 +367,12 @@ async def _test_worker_connectivity(parsed_connection: dict, timeout: int = 10) 
         # Use appropriate timeout
         connector_timeout = aiohttp.ClientTimeout(total=timeout)
 
-        async with session.get(health_url, timeout=connector_timeout) as response:
+        # Handle SSL appropriately based on protocol
+        ssl_context = None
+        if parsed_connection.get('protocol') == 'http':
+            ssl_context = False  # Disable SSL for HTTP connections
+
+        async with session.get(health_url, timeout=connector_timeout, ssl=ssl_context) as response:
             response_time = round((time.time() - start_time) * 1000, 2)  # ms
 
             if response.status == 200:

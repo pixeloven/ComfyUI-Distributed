@@ -3,14 +3,13 @@ services:
     image: ghcr.io/pixeloven/comfyui-docker/core:cuda-latest
     user: ${PUID:-1000}:${PGID:-1000}
     container_name: comfy-master
+    network_mode: host
     environment:
       - PUID=${PUID:-1000}
       - PGID=${PGID:-1000}
       - COMFY_PORT=8188
       - CLI_ARGS=--enable-cors-header
       - CUDA_VISIBLE_DEVICES=0
-    ports:
-      - "${COMFY_PORT:-8188}:${COMFY_PORT:-8188}"
     volumes:
       - comfyui_data:/data
       # Mount models and other ComfyUI directories
@@ -26,13 +25,13 @@ services:
     image: ghcr.io/pixeloven/comfyui-docker/core:cuda-latest
     user: ${PUID:-1000}:${PGID:-1000}
     container_name: comfy-local-worker
+    network_mode: host
     environment:
       - PUID=${PUID:-1000}
       - PGID=${PGID:-1000}
       - COMFY_PORT=8189
       - CLI_ARGS=--enable-cors-header
-    ports:
-      - "${COMFY_PORT:-8188}:${COMFY_PORT:-8188}"
+      - CUDA_VISIBLE_DEVICES=0
     volumes:
       - comfyui_data:/data
       # Mount models and other ComfyUI directories
@@ -42,6 +41,7 @@ services:
 
       # Mount project into custom_nodes directory
       - ./:/data/comfy/custom_nodes/ComfyUI-Distributed
+    runtime: nvidia
 
 volumes: 
   comfyui_data:

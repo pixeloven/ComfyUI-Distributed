@@ -12,7 +12,10 @@ async def get_client_session():
     """Get or create a shared aiohttp client session."""
     global _client_session
     if _client_session is None or _client_session.closed:
-        connector = aiohttp.TCPConnector(limit=100, limit_per_host=30)
+        connector = aiohttp.TCPConnector(
+            limit=100,
+            limit_per_host=30
+        )
         # Don't set timeout here - set it per request
         _client_session = aiohttp.ClientSession(connector=connector)
     return _client_session
