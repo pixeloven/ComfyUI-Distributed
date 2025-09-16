@@ -1,0 +1,17 @@
+node_modules/
+__pycache__/
+dist/ 
+.DS_Store
+.env
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+node.zip
+.vscode/
+.claude/
+
+# Ignore Models for testing
+tests/models
+
+# Ignore generated project files
+gpu_config.json

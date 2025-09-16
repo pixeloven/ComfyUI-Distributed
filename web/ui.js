@@ -1,4 +1,5 @@
 import { BUTTON_STYLES, UI_STYLES, STATUS_COLORS, UI_COLORS, TIMEOUTS } from './constants.js';
+import { ConnectionInput } from './connectionInput.js';
 
 const cardConfigs = {
     master: {
@@ -50,15 +51,31 @@ const cardConfigs = {
         infoText: (data, extension) => {
             const isRemote = extension.isRemoteWorker(data);
             const isCloud = data.type === 'cloud';
-            
-            if (isCloud) {
-                // For cloud workers, don't show port (it's always 443)
-                return `<strong>${data.name}</strong><br><small style="color: ${UI_COLORS.MUTED_TEXT};">${data.host}</small>`;
-            } else if (isRemote) {
-                return `<strong>${data.name}</strong><br><small style="color: ${UI_COLORS.MUTED_TEXT};">${data.host}:${data.port}</small>`;
+            const isLocal = extension.isLocalWorker(data);
+
+            // Use connection string if available, otherwise fall back to host:port
+            let connectionDisplay = '';
+            if (data.connection) {
+                // Clean up connection string for display
+                connectionDisplay = data.connection.replace(/^https?:\/\//, '');
             } else {
+                // Fallback to legacy host:port display
+                if (isCloud) {
+                    connectionDisplay = data.host;
+                } else if (isRemote) {
+                    connectionDisplay = `${data.host}:${data.port}`;
+                } else {
+                    connectionDisplay = `Port ${data.port}`;
+                }
+            }
+
+            // Build display info based on worker type
+            if (isLocal) {
                 const cudaInfo = data.cuda_device !== undefined ? `CUDA ${data.cuda_device} • ` : '';
-                return `<strong>${data.name}</strong><br><small style="color: ${UI_COLORS.MUTED_TEXT};">${cudaInfo}Port ${data.port}</small>`;
+                return `<strong>${data.name}</strong><br><small style="color: ${UI_COLORS.MUTED_TEXT};">${cudaInfo}${connectionDisplay}</small>`;
+            } else {
+                const typeInfo = isCloud ? '☁️ ' : '🌐 ';
+                return `<strong>${data.name}</strong><br><small style="color: ${UI_COLORS.MUTED_TEXT};">${typeInfo}${connectionDisplay}</small>`;
             }
         },
         controls: { 
@@ -659,168 +676,211 @@ export class DistributedUI {
     createWorkerSettingsForm(extension, worker) {
         const form = document.createElement("div");
         form.style.cssText = "display: flex; flex-direction: column; gap: 8px;";
-        
+
         // Name field
         const nameGroup = this.createFormGroup("Name:", worker.name, `name-${worker.id}`);
         form.appendChild(nameGroup.group);
-        
-        // Worker type dropdown
+
+        // Connection field with new ConnectionInput component
+        const connectionGroup = document.createElement("div");
+        connectionGroup.style.cssText = "display: flex; flex-direction: column; gap: 4px; margin: 5px 0;";
+
+        const connectionLabel = document.createElement("label");
+        connectionLabel.textContent = "Connection:";
+        connectionLabel.style.cssText = "font-size: 12px; color: #ccc;";
+
+        // Generate connection string from worker data
+        let currentConnection = worker.connection || this.generateConnectionString(worker);
+
+        const connectionInput = new ConnectionInput({
+            onValidation: (result) => {
+                // Store validation result for save operation
+                worker._connectionValidation = result;
+
+                // Update worker type display if validation is successful
+                if (result.status === 'valid' && result.details) {
+                    const detectedType = result.details.worker_type;
+                    const typeSelect = document.getElementById(`worker-type-${worker.id}`);
+                    if (typeSelect && typeSelect.value !== detectedType) {
+                        typeSelect.value = detectedType;
+                        this.updateWorkerTypeFields(worker.id, detectedType);
+                    }
+                }
+            },
+            onConnectionTest: (result) => {
+                // Show test results to user via toast if available
+                if (extension.app?.extensionManager?.toast) {
+                    if (result.connectivity?.reachable) {
+                        extension.app.extensionManager.toast.add({
+                            severity: "success",
+                            summary: "Connection Test",
+                            detail: "Worker is reachable and responding",
+                            life: 3000
+                        });
+                    } else {
+                        extension.app.extensionManager.toast.add({
+                            severity: "error",
+                            summary: "Connection Test",
+                            detail: result.connectivity?.error || "Connection failed",
+                            life: 5000
+                        });
+                    }
+                }
+            },
+            onChange: (value) => {
+                // Update stored connection string
+                worker._pendingConnection = value;
+            }
+        });
+
+        const connectionElement = connectionInput.create();
+        connectionInput.setValue(currentConnection);
+
+        // Store reference for cleanup
+        worker._connectionInput = connectionInput;
+
+        connectionGroup.appendChild(connectionLabel);
+        connectionGroup.appendChild(connectionElement);
+        form.appendChild(connectionGroup);
+
+        // Worker type display (read-only, auto-detected)
         const typeGroup = document.createElement("div");
         typeGroup.style.cssText = "display: flex; flex-direction: column; gap: 4px; margin: 5px 0;";
-        
+
         const typeLabel = document.createElement("label");
         typeLabel.htmlFor = `worker-type-${worker.id}`;
         typeLabel.textContent = "Worker Type:";
         typeLabel.style.cssText = "font-size: 12px; color: #ccc;";
-        
+
         const typeSelect = document.createElement("select");
         typeSelect.id = `worker-type-${worker.id}`;
         typeSelect.style.cssText = "padding: 4px 8px; background: #333; color: #fff; border: 1px solid #555; border-radius: 4px; font-size: 12px;";
-        
+
         // Create options
-        const localOption = document.createElement("option");
-        localOption.value = "local";
-        localOption.textContent = "Local";
-        
-        const remoteOption = document.createElement("option");
-        remoteOption.value = "remote";
-        remoteOption.textContent = "Remote";
-        
-        const cloudOption = document.createElement("option");
-        cloudOption.value = "cloud";
-        cloudOption.textContent = "Cloud";
-        
-        typeSelect.appendChild(localOption);
-        typeSelect.appendChild(remoteOption);
-        typeSelect.appendChild(cloudOption);
-        
-        // Create powered by Runpod text (initially hidden)
+        const options = [
+            { value: "local", text: "Local" },
+            { value: "remote", text: "Remote" },
+            { value: "cloud", text: "Cloud" }
+        ];
+
+        options.forEach(opt => {
+            const option = document.createElement("option");
+            option.value = opt.value;
+            option.textContent = opt.text;
+            typeSelect.appendChild(option);
+        });
+
+        // Set current type
+        const currentType = worker.type || this.detectWorkerType(worker);
+        typeSelect.value = currentType;
+
+        // Handle manual type override
+        typeSelect.onchange = (e) => {
+            const selectedType = e.target.value;
+            this.updateWorkerTypeFields(worker.id, selectedType);
+            worker._manualType = selectedType; // Mark as manually overridden
+        };
+
+        typeGroup.appendChild(typeLabel);
+        typeGroup.appendChild(typeSelect);
+
+        // Add cloud worker help link
         const runpodText = document.createElement("a");
         runpodText.id = `runpod-text-${worker.id}`;
         runpodText.href = "https://github.com/robertvoy/ComfyUI-Distributed/blob/main/docs/worker-setup-guides.md#cloud-workers";
         runpodText.target = "_blank";
         runpodText.textContent = "Deploy Cloud Worker with Runpod";
         runpodText.style.cssText = "font-size: 12px; color: #4a90e2; text-decoration: none; margin-top: 4px; display: none; cursor: pointer;";
-        
-        // Store the onchange function to be assigned later
-        const createOnChangeHandler = () => {
-            return (e) => {
-                const workerType = e.target.value;
-                // Show/hide relevant fields
-                const hostGroup = document.getElementById(`host-group-${worker.id}`);
-                const hostInput = document.getElementById(`host-${worker.id}`);
-                const portGroup = document.getElementById(`port-group-${worker.id}`);
-                const portInput = document.getElementById(`port-${worker.id}`);
-                const cudaGroup = document.getElementById(`cuda-group-${worker.id}`);
-                const argsGroup = document.getElementById(`args-group-${worker.id}`);
-                const runpodTextElem = document.getElementById(`runpod-text-${worker.id}`);
-                
-                // Check if elements exist before accessing them
-                if (!hostGroup || !portGroup || !cudaGroup || !argsGroup || !runpodTextElem || !hostInput || !portInput) {
-                    return; // Elements not ready yet
-                }
-                
-                if (workerType === "local") {
-                    hostGroup.style.display = "none";
-                    portGroup.style.display = "flex";
-                    cudaGroup.style.display = "flex";
-                    argsGroup.style.display = "flex";
-                    runpodTextElem.style.display = "none";
-                } else if (workerType === "remote") {
-                    hostGroup.style.display = "flex";
-                    portGroup.style.display = "flex";
-                    cudaGroup.style.display = "none";
-                    argsGroup.style.display = "none";
-                    runpodTextElem.style.display = "none";
-                    // Update placeholder for remote workers
-                    hostInput.placeholder = "e.g., 192.168.1.100";
-                    // If switching to remote and host is localhost, clear it
-                    if (hostInput.value === "localhost" || hostInput.value === "127.0.0.1") {
-                        hostInput.value = "";
-                    }
-                } else if (workerType === "cloud") {
-                    hostGroup.style.display = "flex";
-                    portGroup.style.display = "flex"; // Keep port visible for cloud workers
-                    cudaGroup.style.display = "none";
-                    argsGroup.style.display = "none";
-                    runpodTextElem.style.display = "block";
-                    // Update placeholder for cloud workers
-                    hostInput.placeholder = "e.g., your-cloud-worker.trycloudflare.com";
-                    // Set port to 443 for cloud workers
-                    portInput.value = "443";
-                    // If switching to cloud and host is localhost, clear it
-                    if (hostInput.value === "localhost" || hostInput.value === "127.0.0.1") {
-                        hostInput.value = "";
-                    }
-                }
-            };
-        };
-        
-        typeGroup.appendChild(typeLabel);
-        typeGroup.appendChild(typeSelect);
         typeGroup.appendChild(runpodText);
+
         form.appendChild(typeGroup);
-        
-        // Host field (only for remote workers)
-        const hostGroup = this.createFormGroup("Host:", worker.host || "", `host-${worker.id}`, "text", "e.g., 192.168.1.100");
-        hostGroup.group.id = `host-group-${worker.id}`;
-        hostGroup.group.style.display = (extension.isRemoteWorker(worker) || worker.type === "cloud") ? "flex" : "none";
-        form.appendChild(hostGroup.group);
-        
-        // Port field
-        const portGroup = this.createFormGroup("Port:", worker.port, `port-${worker.id}`, "number");
-        portGroup.group.id = `port-group-${worker.id}`;
-        form.appendChild(portGroup.group);
-        
+
         // CUDA Device field (only for local workers)
         const cudaGroup = this.createFormGroup("CUDA Device:", worker.cuda_device || 0, `cuda-${worker.id}`, "number");
         cudaGroup.group.id = `cuda-group-${worker.id}`;
-        cudaGroup.group.style.display = (extension.isRemoteWorker(worker) || worker.type === "cloud") ? "none" : "flex";
         form.appendChild(cudaGroup.group);
-        
+
         // Extra Args field (only for local workers)
         const argsGroup = this.createFormGroup("Extra Args:", worker.extra_args || "", `args-${worker.id}`);
         argsGroup.group.id = `args-group-${worker.id}`;
-        argsGroup.group.style.display = (extension.isRemoteWorker(worker) || worker.type === "cloud") ? "none" : "flex";
         form.appendChild(argsGroup.group);
-        
+
+        // Update field visibility based on current type
+        this.updateWorkerTypeFields(worker.id, currentType);
+
         // Buttons
-        const saveBtn = this.createButton("Save", 
+        const saveBtn = this.createButton("Save",
             () => extension.saveWorkerSettings(worker.id),
             "background-color: #4a7c4a;");
         saveBtn.style.cssText = BUTTON_STYLES.base + BUTTON_STYLES.success;
-        
-        const cancelBtn = this.createButton("Cancel", 
+
+        const cancelBtn = this.createButton("Cancel",
             () => extension.cancelWorkerSettings(worker.id),
             "background-color: #555;");
         cancelBtn.style.cssText = BUTTON_STYLES.base + BUTTON_STYLES.cancel;
-        
-        const deleteBtn = this.createButton("Delete", 
+
+        const deleteBtn = this.createButton("Delete",
             () => extension.deleteWorker(worker.id),
             "background-color: #7c4a4a;");
         deleteBtn.style.cssText = BUTTON_STYLES.base + BUTTON_STYLES.error + BUTTON_STYLES.marginLeftAuto;
-        
+
         const buttonGroup = this.createButtonGroup([saveBtn, cancelBtn, deleteBtn], " margin-top: 8px;");
         form.appendChild(buttonGroup);
-        
-        // Assign the onchange handler now that all elements are created
-        typeSelect.onchange = createOnChangeHandler();
-        
-        // Set initial value and trigger state after all DOM elements are created
-        if (worker.type === "cloud") {
-            typeSelect.value = "cloud";
-            // Show Runpod text immediately for cloud workers
-            runpodText.style.display = "block";
-        } else if (extension.isRemoteWorker(worker)) {
-            typeSelect.value = "remote";
-        } else {
-            typeSelect.value = "local";
-        }
-        
-        // Trigger initial state now that all elements exist
-        typeSelect.dispatchEvent(new Event('change'));
-        
+
         return form;
+    }
+
+    generateConnectionString(worker) {
+        if (!worker.host || !worker.port) {
+            return 'localhost:8189';
+        }
+
+        const host = worker.host;
+        const port = worker.port;
+        const isSecure = worker.type === 'cloud' || port === 443;
+
+        if (isSecure) {
+            return port === 443 ? `https://${host}` : `https://${host}:${port}`;
+        } else {
+            return port === 80 ? `http://${host}` : `${host}:${port}`;
+        }
+    }
+
+    detectWorkerType(worker) {
+        if (worker.type) return worker.type;
+
+        const host = worker.host || 'localhost';
+        const port = worker.port || 8189;
+
+        if (host === 'localhost' || host === '127.0.0.1') {
+            return 'local';
+        } else if (port === 443 || host.includes('trycloudflare.com') || host.includes('ngrok.io')) {
+            return 'cloud';
+        } else {
+            return 'remote';
+        }
+    }
+
+    updateWorkerTypeFields(workerId, workerType) {
+        const cudaGroup = document.getElementById(`cuda-group-${workerId}`);
+        const argsGroup = document.getElementById(`args-group-${workerId}`);
+        const runpodText = document.getElementById(`runpod-text-${workerId}`);
+
+        if (!cudaGroup || !argsGroup || !runpodText) return;
+
+        if (workerType === "local") {
+            cudaGroup.style.display = "flex";
+            argsGroup.style.display = "flex";
+            runpodText.style.display = "none";
+        } else if (workerType === "remote") {
+            cudaGroup.style.display = "none";
+            argsGroup.style.display = "none";
+            runpodText.style.display = "none";
+        } else if (workerType === "cloud") {
+            cudaGroup.style.display = "none";
+            argsGroup.style.display = "none";
+            runpodText.style.display = "block";
+        }
     }
 
     createSettingsToggle() {

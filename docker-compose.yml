@@ -1,0 +1,42 @@
+services:
+  comfy-cpu:
+    image: ghcr.io/pixeloven/comfyui-docker/core:cpu-latest
+    user: ${PUID:-1000}:${PGID:-1000}
+    container_name: comfy-cpu-react-extension-prod
+    environment:
+      - PUID=${PUID:-1000}
+      - PGID=${PGID:-1000}
+      - COMFY_PORT=${COMFY_PORT:-8188}
+      - CLI_ARGS=--cpu
+    ports:
+      - "${COMFY_PORT:-8188}:${COMFY_PORT:-8188}"
+    volumes:
+      # Mount models and other ComfyUI directories
+      - comfyui_data:/data
+      - comfyui_output:/output
+      # Mount ComfyUI custom_nodes directory
+      - ./:/data/comfy/custom_nodes/ComfyUI-Distributed
+      - ./tests/models:/data/comfy/models
+  comfy-nvidia:
+    image: ghcr.io/pixeloven/comfyui-docker/core:cuda-latest
+    user: ${PUID:-1000}:${PGID:-1000}
+    container_name: comfy-nvidia-react-extension-prod
+    environment:
+      - PUID=${PUID:-1000}
+      - PGID=${PGID:-1000}
+      - COMFY_PORT=${COMFY_PORT:-8188}
+      - CLI_ARGS=
+    ports:
+      - "${COMFY_PORT:-8188}:${COMFY_PORT:-8188}"
+    volumes:
+      # Mount models and other ComfyUI directories
+      - comfyui_data:/data
+      - comfyui_output:/output
+      # Mount ComfyUI custom_nodes directory
+      - ./:/data/comfy/custom_nodes/ComfyUI-Distributed
+      - ./tests/models:/data/comfy/models
+    runtime: nvidia
+
+volumes:
+  comfyui_data:
+  comfyui_output:
