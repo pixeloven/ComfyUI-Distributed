@@ -50,7 +50,7 @@ from .distributed_upscale import (
     NODE_DISPLAY_NAME_MAPPINGS as UPSCALE_DISPLAY_NAME_MAPPINGS
 )
 
-WEB_DIRECTORY = "./web"
+WEB_DIRECTORY = "./ui/dist"
 
 ensure_config_exists()
 

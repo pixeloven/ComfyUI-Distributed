@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ComfyUI Distributed</title>
+    <style>
+      body {
+        margin: 0;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+          'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+          sans-serif;
+        background-color: #1e1e1e;
+        color: white;
+      }
+
+      #distributed-ui-root {
+        width: 100%;
+        height: 100vh;
+      }
+
+      .distributed-ui {
+        width: 100%;
+        max-width: 800px;
+        margin: 0 auto;
+        background-color: #2a2a2a;
+        min-height: 100vh;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="distributed-ui-root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

@@ -1,0 +1,94 @@
+name: React UI CI
+
+on:
+  push:
+    branches: [ main, develop, better-hostname-handling ]
+    paths: [ 'ui/**' ]
+  pull_request:
+    branches: [ main ]
+    paths: [ 'ui/**' ]
+
+jobs:
+  test-and-build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./ui
+
+    strategy:
+      matrix:
+        node-version: [18, 20]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+        cache-dependency-path: ui/package-lock.json
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Lint check
+      run: npm run lint
+
+    - name: Prettier format check
+      run: npm run format:check
+
+    - name: TypeScript type check
+      run: npm run type-check
+
+    - name: Run tests with coverage
+      run: npm run test:coverage
+
+    - name: Upload coverage reports
+      if: matrix.node-version == 20
+      uses: codecov/codecov-action@v3
+      with:
+        directory: ./ui/coverage
+        flags: unittests
+        name: codecov-umbrella
+
+    - name: Build production
+      run: npm run build
+
+    - name: Check build size
+      run: |
+        echo "Build size analysis:"
+        du -sh dist/
+        ls -la dist/
+
+    - name: Upload build artifacts
+      if: matrix.node-version == 20
+      uses: actions/upload-artifact@v4
+      with:
+        name: dist-${{ github.sha }}
+        path: ui/dist/
+        retention-days: 7
+
+  security-audit:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./ui
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 20
+        cache: 'npm'
+        cache-dependency-path: ui/package-lock.json
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Run security audit
+      run: npm audit --audit-level=moderate
