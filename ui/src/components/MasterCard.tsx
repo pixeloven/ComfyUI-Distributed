@@ -1,61 +1,20 @@
 import { useState } from 'react';
-import { Worker } from '@/types/worker';
+import { MasterNode } from '@/types/worker';
 import { StatusDot } from './StatusDot';
 import { UI_COLORS } from '@/utils/constants';
 
-interface WorkerCardProps {
-  worker: Worker;
-  onToggle?: (workerId: string, enabled: boolean) => void;
-  onStart?: (workerId: string) => void;
-  onStop?: (workerId: string) => void;
-  onDelete?: (workerId: string) => void;
-  onSaveSettings?: (workerId: string, settings: Partial<Worker>) => void;
+interface MasterCardProps {
+  master: MasterNode;
+  onSaveSettings?: (settings: Partial<MasterNode>) => void;
 }
 
-export const WorkerCard: React.FC<WorkerCardProps> = ({
-  worker,
-  onToggle,
-  onStart,
-  onStop,
-  onDelete,
+export const MasterCard: React.FC<MasterCardProps> = ({
+  master,
   onSaveSettings
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [editedWorker, setEditedWorker] = useState<Partial<Worker>>(worker);
-
-  const isRemote = worker.type === 'remote' || worker.type === 'cloud';
-  const isCloud = worker.type === 'cloud';
-  const isLocal = worker.type === 'local';
-
-  const getConnectionDisplay = () => {
-    if (worker.connection) {
-      return worker.connection.replace(/^https?:\/\//, '');
-    }
-    if (isCloud) {
-      return worker.host;
-    }
-    if (isRemote) {
-      return `${worker.host}:${worker.port}`;
-    }
-    return `Port ${worker.port}`;
-  };
-
-  const getInfoText = () => {
-    const connectionDisplay = getConnectionDisplay();
-
-    if (isLocal) {
-      const cudaInfo = worker.cuda_device !== undefined ? `CUDA ${worker.cuda_device} • ` : '';
-      return { main: worker.name, sub: `${cudaInfo}${connectionDisplay}` };
-    } else {
-      const typeInfo = isCloud ? '☁️ ' : '🌐 ';
-      return { main: worker.name, sub: `${typeInfo}${connectionDisplay}` };
-    }
-  };
-
-  const handleToggle = () => {
-    onToggle?.(worker.id, !worker.enabled);
-  };
+  const [editedMaster, setEditedMaster] = useState<Partial<MasterNode>>(master);
 
   const handleSettingsToggle = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -63,18 +22,17 @@ export const WorkerCard: React.FC<WorkerCardProps> = ({
   };
 
   const handleSaveSettings = () => {
-    onSaveSettings?.(worker.id, editedWorker);
+    onSaveSettings?.(editedMaster);
     setIsEditing(false);
   };
 
   const handleCancelSettings = () => {
-    setEditedWorker(worker);
+    setEditedMaster(master);
     setIsEditing(false);
   };
 
-  const infoText = getInfoText();
-  const status = worker.enabled ? (worker.status || 'offline') : 'disabled';
-  const isPulsing = worker.enabled && worker.status === 'offline';
+  const cudaInfo = master.cuda_device !== undefined ? `CUDA ${master.cuda_device} • ` : '';
+  const port = master.port || window.location.port || (window.location.protocol === 'https:' ? '443' : '80');
 
   return (
     <div style={{
@@ -85,7 +43,7 @@ export const WorkerCard: React.FC<WorkerCardProps> = ({
       background: UI_COLORS.BACKGROUND_DARK,
       border: `1px solid ${UI_COLORS.BORDER_DARKER}`
     }}>
-      {/* Checkbox Column */}
+      {/* Checkbox Column - Master is always enabled */}
       <div style={{
         flex: '0 0 44px',
         display: 'flex',
@@ -96,10 +54,10 @@ export const WorkerCard: React.FC<WorkerCardProps> = ({
       }}>
         <input
           type="checkbox"
-          checked={worker.enabled}
-          onChange={handleToggle}
-          title="Enable/disable this worker"
-          style={{ margin: 0 }}
+          checked={true}
+          disabled={true}
+          title="Master node is always enabled"
+          style={{ margin: 0, opacity: 0.6 }}
         />
       </div>
 
@@ -117,85 +75,32 @@ export const WorkerCard: React.FC<WorkerCardProps> = ({
           onClick={() => setIsExpanded(!isExpanded)}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: '1' }}>
-            <StatusDot status={status} isPulsing={isPulsing} />
+            <StatusDot status="online" isPulsing={false} />
             <div style={{ flex: '1' }}>
-              <strong>{infoText.main}</strong>
+              <strong id="master-name-display">{master.name || "Master"}</strong>
               <br />
               <small style={{ color: UI_COLORS.MUTED_TEXT }}>
-                {infoText.sub}
+                <span id="master-cuda-info">{cudaInfo}Port {port}</span>
               </small>
             </div>
           </div>
 
           {/* Controls */}
           <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-            {worker.enabled && (
-              <>
-                {worker.status === 'online' ? (
-                  <button
-                    style={{
-                      padding: '4px 14px',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '4px',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s',
-                      fontSize: '11px',
-                      fontWeight: '500',
-                      backgroundColor: '#7c4a4a'
-                    }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onStop?.(worker.id);
-                    }}
-                    className="distributed-button"
-                  >
-                    Stop
-                  </button>
-                ) : (
-                  <button
-                    style={{
-                      padding: '4px 14px',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '4px',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s',
-                      fontSize: '11px',
-                      fontWeight: '500',
-                      backgroundColor: '#4a7c4a'
-                    }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onStart?.(worker.id);
-                    }}
-                    className="distributed-button"
-                  >
-                    Start
-                  </button>
-                )}
-                <button
-                  style={{
-                    padding: '4px 14px',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '4px',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s',
-                    fontSize: '11px',
-                    fontWeight: '500',
-                    backgroundColor: '#685434'
-                  }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    // TODO: Show logs
-                  }}
-                  className="distributed-button"
-                >
-                  Log
-                </button>
-              </>
-            )}
+            <div
+              style={{
+                padding: '4px 14px',
+                color: '#999',
+                border: 'none',
+                borderRadius: '4px',
+                fontSize: '12px',
+                fontWeight: '500',
+                backgroundColor: '#333',
+                textAlign: 'center'
+              }}
+            >
+              Master
+            </div>
 
             <button
               style={{
@@ -234,8 +139,8 @@ export const WorkerCard: React.FC<WorkerCardProps> = ({
                   </label>
                   <input
                     type="text"
-                    value={editedWorker.name || ''}
-                    onChange={(e) => setEditedWorker({ ...editedWorker, name: e.target.value })}
+                    value={editedMaster.name || ''}
+                    onChange={(e) => setEditedMaster({ ...editedMaster, name: e.target.value })}
                     style={{
                       padding: '6px 10px',
                       background: UI_COLORS.BACKGROUND_DARK,
@@ -250,31 +155,16 @@ export const WorkerCard: React.FC<WorkerCardProps> = ({
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
                   <label style={{ fontSize: '12px', color: UI_COLORS.SECONDARY_TEXT, fontWeight: '500' }}>
-                    Host:
-                  </label>
-                  <input
-                    type="text"
-                    value={editedWorker.host || ''}
-                    onChange={(e) => setEditedWorker({ ...editedWorker, host: e.target.value })}
-                    style={{
-                      padding: '6px 10px',
-                      background: UI_COLORS.BACKGROUND_DARK,
-                      border: `1px solid ${UI_COLORS.BORDER_DARK}`,
-                      color: 'white',
-                      fontSize: '12px',
-                      borderRadius: '4px'
-                    }}
-                  />
-                </div>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                  <label style={{ fontSize: '12px', color: UI_COLORS.SECONDARY_TEXT, fontWeight: '500' }}>
-                    Port:
+                    CUDA Device:
                   </label>
                   <input
                     type="number"
-                    value={editedWorker.port || ''}
-                    onChange={(e) => setEditedWorker({ ...editedWorker, port: parseInt(e.target.value) || 0 })}
+                    value={editedMaster.cuda_device !== undefined ? editedMaster.cuda_device : ''}
+                    onChange={(e) => setEditedMaster({
+                      ...editedMaster,
+                      cuda_device: e.target.value ? parseInt(e.target.value) : undefined
+                    })}
+                    placeholder="Auto-detect"
                     style={{
                       padding: '6px 10px',
                       background: UI_COLORS.BACKGROUND_DARK,
@@ -343,25 +233,7 @@ export const WorkerCard: React.FC<WorkerCardProps> = ({
                   }}
                   className="distributed-button"
                 >
-                  Edit
-                </button>
-                <button
-                  onClick={() => onDelete?.(worker.id)}
-                  style={{
-                    padding: '4px 14px',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '4px',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s',
-                    fontSize: '12px',
-                    fontWeight: '500',
-                    backgroundColor: '#7c4a4a',
-                    flex: '1'
-                  }}
-                  className="distributed-button"
-                >
-                  Delete
+                  Edit Master Settings
                 </button>
               </div>
             )}

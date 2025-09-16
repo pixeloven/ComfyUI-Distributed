@@ -1,15 +1,19 @@
 import { create } from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';
-import type { Worker, ExecutionState, ConnectionState, AppState } from '@/types';
+import type { Worker, MasterNode, ExecutionState, ConnectionState, AppState, Config, WorkerStatus } from '@/types';
 
 interface AppStore extends AppState {
   // Worker management
   addWorker: (worker: Worker) => void;
   updateWorker: (id: string, updates: Partial<Worker>) => void;
   removeWorker: (id: string) => void;
-  setWorkerStatus: (id: string, status: Worker['status']) => void;
-  toggleWorkerSelection: (id: string) => void;
-  getSelectedWorkers: () => Worker[];
+  setWorkerStatus: (id: string, status: WorkerStatus) => void;
+  toggleWorker: (id: string) => void;
+  getEnabledWorkers: () => Worker[];
+
+  // Master management
+  setMaster: (master: MasterNode) => void;
+  updateMaster: (updates: Partial<MasterNode>) => void;
 
   // Execution state
   setExecutionState: (state: Partial<ExecutionState>) => void;
@@ -25,7 +29,7 @@ interface AppStore extends AppState {
   setConnectionStatus: (isConnected: boolean) => void;
 
   // Config management
-  setConfig: (config: any) => void;
+  setConfig: (config: Config) => void;
 
   // Logs
   addLog: (log: string) => void;
@@ -51,6 +55,7 @@ export const useAppStore = create<AppStore>()(
   subscribeWithSelector((set, get) => ({
     // Initial state
     workers: [],
+    master: undefined,
     executionState: initialExecutionState,
     connectionState: initialConnectionState,
     config: null,
@@ -77,15 +82,23 @@ export const useAppStore = create<AppStore>()(
     setWorkerStatus: (id, status) =>
       get().updateWorker(id, { status }),
 
-    toggleWorkerSelection: (id) =>
+    toggleWorker: (id) =>
       set((state) => ({
         workers: state.workers.map(worker =>
-          worker.id === id ? { ...worker, isSelected: !worker.isSelected } : worker
+          worker.id === id ? { ...worker, enabled: !worker.enabled } : worker
         )
       })),
 
-    getSelectedWorkers: () =>
-      get().workers.filter(worker => worker.isSelected),
+    getEnabledWorkers: () =>
+      get().workers.filter(worker => worker.enabled),
+
+    // Master management actions
+    setMaster: (master) => set({ master }),
+
+    updateMaster: (updates) =>
+      set((state) => ({
+        master: state.master ? { ...state.master, ...updates } : undefined
+      })),
 
     // Execution state actions
     setExecutionState: (executionState) =>

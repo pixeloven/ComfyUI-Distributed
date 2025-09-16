@@ -1,21 +1,29 @@
 export interface Worker {
   id: string;
-  address: string;
+  name: string;
+  host: string;
   port: number;
-  status: 'online' | 'offline' | 'processing' | 'disabled';
-  isSelected: boolean;
-  isLocal: boolean;
-  gpuId?: number;
-  processId?: number;
-  config?: WorkerConfig;
+  enabled: boolean;
+  cuda_device?: number;
+  type?: 'local' | 'remote' | 'cloud';
+  connection?: string;
+  status?: 'online' | 'offline' | 'processing' | 'disabled';
 }
 
-export interface WorkerConfig {
-  autoLaunch: boolean;
-  enableCors: boolean;
-  additionalArgs: string;
-  customModel?: string;
+export interface MasterNode {
+  id: string;
+  name: string;
+  cuda_device?: number;
+  port: number;
+  status: 'online';
 }
+
+export interface Config {
+  master?: MasterNode;
+  workers?: Worker[];
+}
+
+export type WorkerStatus = 'online' | 'offline' | 'processing' | 'disabled';
 
 export interface ExecutionState {
   isExecuting: boolean;
@@ -35,9 +43,10 @@ export interface ConnectionState {
 
 export interface AppState {
   workers: Worker[];
+  master?: MasterNode;
   executionState: ExecutionState;
   connectionState: ConnectionState;
-  config: any;
+  config: Config | null;
   logs: string[];
 }
 

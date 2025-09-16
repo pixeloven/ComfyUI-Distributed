@@ -1,5 +1,5 @@
 import { TIMEOUTS } from '@/utils/constants';
-import type { ApiResponse, WorkerConfig } from '@/types';
+import type { ApiResponse } from '@/types';
 
 interface RequestOptions extends RequestInit {
   timeout?: number;
@@ -92,7 +92,7 @@ export class ApiClient {
     return this.request<ConfigResponse>('/distributed/config');
   }
 
-  async updateWorker(workerId: string, data: Partial<WorkerConfig>): Promise<ApiResponse> {
+  async updateWorker(workerId: string, data: any): Promise<ApiResponse> {
     return this.request<ApiResponse>('/distributed/config/update_worker', {
       method: 'POST',
       body: JSON.stringify({ worker_id: workerId, ...data })

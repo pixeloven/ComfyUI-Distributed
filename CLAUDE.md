@@ -98,6 +98,52 @@ Worker configuration is managed through a JSON config file. The system auto-gene
 - Process cleanup on master termination
 - Validation patching for ComfyUI's execution system
 
+## Planning Document Standards
+
+All planning documents in this repository should follow a consistent, problem-focused approach:
+
+### Document Structure
+**Required Sections:**
+- **Overview**: Brief description of what the plan aims to achieve
+- **Current State**: Current problems and limitations being addressed
+- **Project Phases**: Organized phases with problems and tasks
+- **Success Criteria**: Measurable outcomes for functional, technical, and UX requirements
+- **How to Use This Plan**: Standard guidance for collaborative implementation
+
+### Phase Organization
+**Each Phase Should Include:**
+- **Problems to Solve**: Clear problem statements (not solutions)
+- **Tasks**: Actionable items with checkboxes [ ] for tracking progress
+- **Focus**: Problems rather than prescriptive implementation details
+
+### Planning Philosophy
+1. **Problem-Focused**: Identify problems to solve, not specific solutions
+2. **Collaborative**: Encourage discussion of implementation options
+3. **Flexible**: Allow adaptation based on discovery during implementation
+4. **Trackable**: Clear tasks that can be checked off as completed
+5. **Iterative**: Support refinement based on what we learn
+
+### Example Phase Format
+```markdown
+### Phase X: Descriptive Name 📝 PLANNED
+**Problems to Solve:**
+- Problem statement 1
+- Problem statement 2
+- Problem statement 3
+
+**Tasks:**
+- [ ] Task that addresses the problems
+- [ ] Another task that addresses the problems
+- [ ] Final task for this phase
+```
+
+### Status Indicators
+- ✅ COMPLETED - Phase has been successfully implemented
+- 📝 PLANNED - Phase is defined but not yet started
+- 🔄 IN PROGRESS - Phase is currently being worked on
+
+This approach ensures plans remain collaborative tools rather than rigid specifications, allowing teams to work together to find the best solutions for each identified problem.
+
 ## Integration Notes
 
 This is a ComfyUI custom node extension. Development should follow ComfyUI's node development patterns and be tested within a ComfyUI environment. The extension requires multiple NVIDIA GPUs or cloud GPU access to be fully functional.

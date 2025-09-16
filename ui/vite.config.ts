@@ -9,7 +9,7 @@ export default defineConfig({
     emptyOutDir: true,
     rollupOptions: {
       input: {
-        main: path.resolve(__dirname, 'src/main.tsx')
+        extension: path.resolve(__dirname, 'src/extension.tsx')
       },
       output: {
         entryFileNames: '[name].js',

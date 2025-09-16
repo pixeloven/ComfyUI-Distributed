@@ -4,7 +4,7 @@ import { UI_STYLES, BUTTON_STYLES } from '@/utils/constants';
 
 export function ExecutionPanel() {
   const { executionState, workers, clearExecutionErrors } = useAppStore();
-  const selectedWorkers = workers.filter(worker => worker.isSelected && worker.status === 'online');
+  const selectedWorkers = workers.filter(worker => worker.enabled && worker.status === 'online');
 
   const parseStyle = (styleString: string): React.CSSProperties => {
     const style: React.CSSProperties = {};
