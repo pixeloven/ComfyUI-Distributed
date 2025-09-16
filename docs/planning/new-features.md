@@ -1,0 +1,2 @@
+- [ ] Adopt features from other dist projects
+- [ ] File sync feature for managing other nodes

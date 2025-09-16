@@ -16,7 +16,8 @@ services:
       - comfyui_output:/output
       # Mount ComfyUI custom_nodes directory
       - ./:/data/comfy/custom_nodes/ComfyUI-Distributed
-      - ./tests/models:/data/comfy/models
+      - ./data/models:/data/comfy/models
+      - ./data/output:/data/comfy/output
   comfy-nvidia:
     image: ghcr.io/pixeloven/comfyui-docker/core:cuda-latest
     user: ${PUID:-1000}:${PGID:-1000}
@@ -34,7 +35,8 @@ services:
       - comfyui_output:/output
       # Mount ComfyUI custom_nodes directory
       - ./:/data/comfy/custom_nodes/ComfyUI-Distributed
-      - ./tests/models:/data/comfy/models
+      - ./data/models:/data/comfy/models
+      - ./data/output:/data/comfy/output
     runtime: nvidia
 
 volumes:
