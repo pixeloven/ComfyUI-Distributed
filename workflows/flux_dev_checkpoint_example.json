@@ -1,8 +1,8 @@
 {
   "id": "21240411-0028-4b07-a786-c5012b3d8ca8",
   "revision": 0,
-  "last_node_id": 53,
-  "last_link_id": 93,
+  "last_node_id": 55,
+  "last_link_id": 97,
   "nodes": [
     {
       "id": 27,
@@ -52,13 +52,13 @@
         1060.3800048828125
       ],
       "flags": {},
-      "order": 1,
+      "order": 25,
       "mode": 0,
       "inputs": [
         {
           "name": "images",
           "type": "IMAGE",
-          "link": null
+          "link": 94
         }
       ],
       "outputs": [],
@@ -66,48 +66,6 @@
       "widgets_values": [
         "ComfyUI"
       ]
-    },
-    {
-      "id": 6,
-      "type": "CLIPTextEncode",
-      "pos": [
-        15.25,
-        555.75
-      ],
-      "size": [
-        422.8500061035156,
-        164.30999755859375
-      ],
-      "flags": {},
-      "order": 6,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "clip",
-          "type": "CLIP",
-          "link": 45
-        }
-      ],
-      "outputs": [
-        {
-          "name": "CONDITIONING",
-          "type": "CONDITIONING",
-          "slot_index": 0,
-          "links": [
-            56,
-            60
-          ]
-        }
-      ],
-      "title": "CLIP Text Encode (Positive Prompt)",
-      "properties": {
-        "Node name for S&R": "CLIPTextEncode"
-      },
-      "widgets_values": [
-        "cute anime girl with massive fluffy fennec ears and a big fluffy tail blonde messy long hair blue eyes wearing a maid outfit with a long black gold leaf pattern dress and a white apron mouth open placing a fancy black forest cake with candles on top of a dinner table of an old dark Victorian mansion lit by candlelight with a bright window to the foggy forest and very expensive stuff everywhere there are paintings on the walls"
-      ],
-      "color": "#232",
-      "bgcolor": "#353"
     },
     {
       "id": 37,
@@ -121,7 +79,7 @@
         88
       ],
       "flags": {},
-      "order": 2,
+      "order": 1,
       "mode": 0,
       "inputs": [],
       "outputs": [],
@@ -144,7 +102,7 @@
         160.66493225097656
       ],
       "flags": {},
-      "order": 3,
+      "order": 2,
       "mode": 0,
       "inputs": [],
       "outputs": [],
@@ -169,7 +127,7 @@
         26
       ],
       "flags": {},
-      "order": 13,
+      "order": 12,
       "mode": 0,
       "inputs": [
         {
@@ -204,7 +162,7 @@
         63
       ],
       "flags": {},
-      "order": 9,
+      "order": 8,
       "mode": 0,
       "inputs": [
         {
@@ -243,7 +201,7 @@
         26
       ],
       "flags": {},
-      "order": 10,
+      "order": 9,
       "mode": 0,
       "inputs": [
         {
@@ -279,7 +237,7 @@
         262
       ],
       "flags": {},
-      "order": 14,
+      "order": 13,
       "mode": 0,
       "inputs": [
         {
@@ -317,7 +275,7 @@
         "Node name for S&R": "KSampler"
       },
       "widgets_values": [
-        965117302170997,
+        999722846746260,
         "randomize",
         20,
         1,
@@ -338,7 +296,7 @@
         98
       ],
       "flags": {},
-      "order": 4,
+      "order": 3,
       "mode": 0,
       "inputs": [],
       "outputs": [
@@ -393,7 +351,7 @@
         26
       ],
       "flags": {},
-      "order": 15,
+      "order": 14,
       "mode": 0,
       "inputs": [
         {
@@ -428,7 +386,7 @@
         26
       ],
       "flags": {},
-      "order": 19,
+      "order": 18,
       "mode": 0,
       "inputs": [
         {
@@ -463,7 +421,7 @@
         26
       ],
       "flags": {},
-      "order": 17,
+      "order": 16,
       "mode": 0,
       "inputs": [
         {
@@ -498,7 +456,7 @@
         46
       ],
       "flags": {},
-      "order": 18,
+      "order": 17,
       "mode": 0,
       "inputs": [
         {
@@ -540,7 +498,7 @@
         26
       ],
       "flags": {},
-      "order": 16,
+      "order": 15,
       "mode": 0,
       "inputs": [
         {
@@ -575,7 +533,7 @@
         26
       ],
       "flags": {},
-      "order": 12,
+      "order": 11,
       "mode": 0,
       "inputs": [
         {
@@ -610,7 +568,7 @@
         26
       ],
       "flags": {},
-      "order": 8,
+      "order": 7,
       "mode": 0,
       "inputs": [
         {
@@ -646,7 +604,7 @@
         26
       ],
       "flags": {},
-      "order": 11,
+      "order": 10,
       "mode": 0,
       "inputs": [
         {
@@ -682,7 +640,7 @@
         26
       ],
       "flags": {},
-      "order": 7,
+      "order": 6,
       "mode": 0,
       "inputs": [
         {
@@ -717,7 +675,7 @@
         26
       ],
       "flags": {},
-      "order": 5,
+      "order": 4,
       "mode": 0,
       "inputs": [
         {
@@ -752,7 +710,7 @@
         26
       ],
       "flags": {},
-      "order": 21,
+      "order": 20,
       "mode": 0,
       "inputs": [
         {
@@ -767,41 +725,6 @@
           "type": "IMAGE",
           "links": [
             92
-          ]
-        }
-      ],
-      "properties": {
-        "showOutputText": false,
-        "horizontal": false
-      }
-    },
-    {
-      "id": 53,
-      "type": "Reroute",
-      "pos": [
-        1580,
-        880
-      ],
-      "size": [
-        75,
-        26
-      ],
-      "flags": {},
-      "order": 22,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "",
-          "type": "*",
-          "link": 92
-        }
-      ],
-      "outputs": [
-        {
-          "name": "",
-          "type": "IMAGE",
-          "links": [
-            93
           ]
         }
       ],
@@ -828,7 +751,7 @@
         {
           "name": "upscaled_image",
           "type": "IMAGE",
-          "link": 93
+          "link": 96
         },
         {
           "name": "model",
@@ -855,7 +778,9 @@
         {
           "name": "IMAGE",
           "type": "IMAGE",
-          "links": []
+          "links": [
+            94
+          ]
         }
       ],
       "properties": {
@@ -871,10 +796,10 @@
         "secondTabWidth": 65
       },
       "widgets_values": [
-        269777990474642,
+        586957035044766,
         "randomize",
         20,
-        7,
+        1,
         "dpmpp_2m_sde",
         "karras",
         0.6000000000000001,
@@ -885,6 +810,41 @@
         true,
         false
       ]
+    },
+    {
+      "id": 53,
+      "type": "Reroute",
+      "pos": [
+        1580,
+        880
+      ],
+      "size": [
+        75,
+        26
+      ],
+      "flags": {},
+      "order": 21,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "",
+          "type": "*",
+          "link": 92
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "IMAGE",
+          "links": [
+            95
+          ]
+        }
+      ],
+      "properties": {
+        "showOutputText": false,
+        "horizontal": false
+      }
     },
     {
       "id": 9,
@@ -898,7 +858,7 @@
         489.1300048828125
       ],
       "flags": {},
-      "order": 20,
+      "order": 19,
       "mode": 0,
       "inputs": [
         {
@@ -912,6 +872,116 @@
       "widgets_values": [
         "ComfyUI"
       ]
+    },
+    {
+      "id": 55,
+      "type": "SaveImage",
+      "pos": [
+        1595.2347412109375,
+        1099.374267578125
+      ],
+      "size": [
+        492.79998779296875,
+        489.1300048828125
+      ],
+      "flags": {},
+      "order": 24,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 97
+        }
+      ],
+      "outputs": [],
+      "properties": {},
+      "widgets_values": [
+        "ComfyUI"
+      ]
+    },
+    {
+      "id": 54,
+      "type": "ResizeAndPadImage",
+      "pos": [
+        1753.0111083984375,
+        789.4566040039062
+      ],
+      "size": [
+        319.77459716796875,
+        130
+      ],
+      "flags": {},
+      "order": 22,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 95
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            96,
+            97
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "ResizeAndPadImage"
+      },
+      "widgets_values": [
+        2048,
+        2048,
+        "white",
+        "lanczos"
+      ]
+    },
+    {
+      "id": 6,
+      "type": "CLIPTextEncode",
+      "pos": [
+        15.25,
+        555.75
+      ],
+      "size": [
+        422.8500061035156,
+        164.30999755859375
+      ],
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "clip",
+          "type": "CLIP",
+          "link": 45
+        }
+      ],
+      "outputs": [
+        {
+          "name": "CONDITIONING",
+          "type": "CONDITIONING",
+          "slot_index": 0,
+          "links": [
+            56,
+            60
+          ]
+        }
+      ],
+      "title": "CLIP Text Encode (Positive Prompt)",
+      "properties": {
+        "Node name for S&R": "CLIPTextEncode"
+      },
+      "widgets_values": [
+        "Abtract expressionism: A detailed portrait of a young woman with dark brown hair loosely styled, hazel-green eyes, soft blush, and glowing skin. Abstract background with warm orange and red tones and distressed textures. "
+      ],
+      "color": "#232",
+      "bgcolor": "#353"
     }
   ],
   "links": [
@@ -1124,10 +1194,34 @@
       "*"
     ],
     [
-      93,
+      94,
+      50,
+      0,
+      39,
+      0,
+      "IMAGE"
+    ],
+    [
+      95,
       53,
       0,
+      54,
+      0,
+      "IMAGE"
+    ],
+    [
+      96,
+      54,
+      0,
       50,
+      0,
+      "IMAGE"
+    ],
+    [
+      97,
+      54,
+      0,
+      55,
       0,
       "IMAGE"
     ]
@@ -1136,10 +1230,10 @@
   "config": {},
   "extra": {
     "ds": {
-      "scale": 0.8000000000000004,
+      "scale": 0.8000000000000016,
       "offset": [
-        -374.6810400941742,
-        -25.314764521968385
+        -298.3987965072197,
+        -158.65319928895553
       ]
     },
     "frontendVersion": "1.25.11"
