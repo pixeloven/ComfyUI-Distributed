@@ -1,0 +1,41 @@
+{
+  "prompt": {
+    "1": {
+      "inputs": {
+        "seeds": "1,2,3,4",
+        "batch_size": 4
+      },
+      "class_type": "DistributedSeed"
+    },
+    "2": {
+      "inputs": {
+        "width": 512,
+        "height": 512,
+        "batch_size": 1
+      },
+      "class_type": "EmptyLatentImage"
+    },
+    "3": {
+      "inputs": {
+        "seed_control": ["1", 0],
+        "latent_image": ["2", 0]
+      },
+      "class_type": "DistributedCollector"
+    },
+    "4": {
+      "inputs": {
+        "samples": ["3", 0],
+        "vae_name": "vae-ft-mse-840000-ema-pruned.ckpt"
+      },
+      "class_type": "VAEDecode"
+    },
+    "5": {
+      "inputs": {
+        "images": ["4", 0],
+        "filename_prefix": "distributed_test"
+      },
+      "class_type": "SaveImage"
+    }
+  },
+  "client_id": "test_client"
+}

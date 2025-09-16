@@ -23,7 +23,8 @@ from comfy.utils import ProgressBar
 
 # Import shared utilities
 from .utils.logging import debug_log, log
-from .utils.config import CONFIG_FILE, get_default_config, load_config, save_config, ensure_config_exists, get_worker_timeout_seconds
+from .utils.config import CONFIG_FILE, get_default_config, load_config, save_config, ensure_config_exists, get_worker_timeout_seconds, validate_worker_config
+from .utils.connection_parser import ConnectionParser, ConnectionParseError, validate_connection_string
 from .utils.image import tensor_to_pil, pil_to_tensor, ensure_contiguous
 from .utils.process import is_process_alive, terminate_process, get_python_executable
 from .utils.network import handle_api_error, get_server_port, get_server_loop, get_client_session, cleanup_client_session
@@ -288,6 +289,145 @@ async def get_system_info_endpoint(request):
             "message": str(e)
         }, status=500)
 
+@server.PromptServer.instance.routes.post("/distributed/validate_connection")
+async def validate_connection_endpoint(request):
+    """Validate a connection string and optionally test connectivity."""
+    try:
+        data = await request.json()
+        connection_string = data.get('connection')
+        test_connectivity = data.get('test_connectivity', False)
+        timeout = data.get('timeout', 10)
+
+        if not connection_string:
+            return await handle_api_error(request, "Missing connection string", 400)
+
+        # Validate connection string format
+        is_valid, error_message = validate_connection_string(connection_string)
+        if not is_valid:
+            return web.json_response({
+                "status": "invalid",
+                "error": error_message,
+                "details": None
+            })
+
+        # Parse connection string
+        try:
+            parsed = ConnectionParser.parse(connection_string)
+        except ConnectionParseError as e:
+            return web.json_response({
+                "status": "invalid",
+                "error": str(e),
+                "details": None
+            })
+
+        response_data = {
+            "status": "valid",
+            "error": None,
+            "details": {
+                "host": parsed['host'],
+                "port": parsed['port'],
+                "protocol": parsed['protocol'],
+                "worker_type": parsed['worker_type'],
+                "is_secure": parsed['is_secure'],
+                "connection_url": ConnectionParser.to_url(parsed)
+            }
+        }
+
+        # Test connectivity if requested
+        if test_connectivity:
+            try:
+                connectivity_result = await _test_worker_connectivity(parsed, timeout)
+                response_data["connectivity"] = connectivity_result
+            except Exception as e:
+                response_data["connectivity"] = {
+                    "status": "error",
+                    "error": str(e),
+                    "reachable": False,
+                    "response_time": None
+                }
+
+        return web.json_response(response_data)
+
+    except Exception as e:
+        return await handle_api_error(request, e, 500)
+
+async def _test_worker_connectivity(parsed_connection: dict, timeout: int = 10) -> dict:
+    """Test connectivity to a worker endpoint."""
+    import time
+
+    start_time = time.time()
+    connection_url = ConnectionParser.to_url(parsed_connection)
+
+    # Try to connect to the worker's health endpoint
+    health_url = f"{connection_url.rstrip('/')}/system_stats"
+
+    try:
+        session = await get_client_session()
+
+        # Use appropriate timeout
+        connector_timeout = aiohttp.ClientTimeout(total=timeout)
+
+        # Handle SSL appropriately based on protocol
+        ssl_context = None
+        if parsed_connection.get('protocol') == 'http':
+            ssl_context = False  # Disable SSL for HTTP connections
+
+        async with session.get(health_url, timeout=connector_timeout, ssl=ssl_context) as response:
+            response_time = round((time.time() - start_time) * 1000, 2)  # ms
+
+            if response.status == 200:
+                try:
+                    data = await response.json()
+                    return {
+                        "status": "success",
+                        "reachable": True,
+                        "response_time": response_time,
+                        "worker_info": {
+                            "version": data.get("version"),
+                            "device_name": data.get("device", {}).get("name"),
+                            "vram_total": data.get("device", {}).get("vram_total"),
+                            "vram_free": data.get("device", {}).get("vram_free")
+                        }
+                    }
+                except:
+                    # Response wasn't JSON, but connection worked
+                    return {
+                        "status": "reachable_no_data",
+                        "reachable": True,
+                        "response_time": response_time,
+                        "worker_info": None
+                    }
+            else:
+                return {
+                    "status": "http_error",
+                    "reachable": True,
+                    "response_time": response_time,
+                    "error": f"HTTP {response.status}",
+                    "worker_info": None
+                }
+
+    except asyncio.TimeoutError:
+        return {
+            "status": "timeout",
+            "reachable": False,
+            "response_time": None,
+            "error": f"Connection timeout after {timeout}s"
+        }
+    except aiohttp.ClientConnectorError as e:
+        return {
+            "status": "connection_error",
+            "reachable": False,
+            "response_time": None,
+            "error": f"Connection failed: {str(e)}"
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "reachable": False,
+            "response_time": None,
+            "error": str(e)
+        }
+
 @server.PromptServer.instance.routes.post("/distributed/config/update_worker")
 async def update_worker_endpoint(request):
     try:
@@ -309,54 +449,106 @@ async def update_worker_endpoint(request):
                     worker["name"] = data["name"]
                 if "port" in data:
                     worker["port"] = data["port"]
-                    
+
+                # Handle connection string if provided
+                if "connection" in data:
+                    worker["connection"] = data["connection"]
+                    # Parse and update host/port from connection string
+                    try:
+                        parsed = ConnectionParser.parse(data["connection"])
+                        worker["host"] = parsed["host"]
+                        worker["port"] = parsed["port"]
+                        worker["type"] = parsed["worker_type"]
+                    except ConnectionParseError as e:
+                        return await handle_api_error(request, f"Invalid connection string: {e}", 400)
+
                 # Handle host field - remove it if None
                 if "host" in data:
                     if data["host"] is None:
                         worker.pop("host", None)
                     else:
                         worker["host"] = data["host"]
-                        
+
                 # Handle cuda_device field - remove it if None
                 if "cuda_device" in data:
                     if data["cuda_device"] is None:
                         worker.pop("cuda_device", None)
                     else:
                         worker["cuda_device"] = data["cuda_device"]
-                        
+
                 # Handle extra_args field - remove it if None
                 if "extra_args" in data:
                     if data["extra_args"] is None:
                         worker.pop("extra_args", None)
                     else:
                         worker["extra_args"] = data["extra_args"]
-                        
+
                 # Handle type field
                 if "type" in data:
                     worker["type"] = data["type"]
+
+                # Validate the updated worker configuration
+                is_valid, error_message = validate_worker_config(worker)
+                if not is_valid:
+                    return await handle_api_error(request, f"Invalid worker configuration: {error_message}", 400)
                         
                 worker_found = True
                 break
                 
         if not worker_found:
-            # If worker not found and all required fields are provided, create new worker
-            if all(key in data for key in ["name", "port", "cuda_device"]):
+            # If worker not found, create new worker
+            required_fields = ["name"]
+
+            # Check if connection string is provided
+            if "connection" in data and data["connection"]:
+                # Use connection string approach
+                new_worker = {
+                    "id": worker_id,
+                    "name": data["name"],
+                    "connection": data["connection"],
+                    "enabled": data.get("enabled", False),
+                    "extra_args": data.get("extra_args", ""),
+                }
+
+                # Parse connection string to populate host/port/type
+                try:
+                    parsed = ConnectionParser.parse(data["connection"])
+                    new_worker.update({
+                        "host": parsed["host"],
+                        "port": parsed["port"],
+                        "type": parsed["worker_type"]
+                    })
+                except ConnectionParseError as e:
+                    return await handle_api_error(request, f"Invalid connection string: {e}", 400)
+
+                # Add CUDA device for local workers
+                if parsed["worker_type"] == "local":
+                    new_worker["cuda_device"] = data.get("cuda_device", 0)
+
+            elif all(key in data for key in ["name", "port"]):
+                # Use legacy host/port approach
                 new_worker = {
                     "id": worker_id,
                     "name": data["name"],
                     "host": data.get("host", "localhost"),
                     "port": data["port"],
-                    "cuda_device": data["cuda_device"],
+                    "cuda_device": data.get("cuda_device", 0),
                     "enabled": data.get("enabled", False),
                     "extra_args": data.get("extra_args", ""),
                     "type": data.get("type", "local")
                 }
-                if "workers" not in config:
-                    config["workers"] = []
-                config["workers"].append(new_worker)
-                worker_found = True
             else:
                 return await handle_api_error(request, f"Worker {worker_id} not found and missing required fields for creation", 404)
+
+            # Validate new worker configuration
+            is_valid, error_message = validate_worker_config(new_worker)
+            if not is_valid:
+                return await handle_api_error(request, f"Invalid worker configuration: {error_message}", 400)
+
+            if "workers" not in config:
+                config["workers"] = []
+            config["workers"].append(new_worker)
+            worker_found = True
             
         if save_config(config):
             return web.json_response({"status": "success"})

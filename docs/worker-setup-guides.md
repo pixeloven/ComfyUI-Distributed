@@ -25,7 +25,7 @@
 2. **Click** "Add Worker" in the UI.
 3. **Configure** your local worker:
    - **Name**: A descriptive name for the worker (e.g., "Studio PC 1")
-   - **Port**: A unique port number for this worker (e.g., 8189, 8190...).
+   - **Connection**: The worker endpoint (e.g., localhost:8189, localhost:8190). You can use the quick preset buttons.
    - **CUDA Device**: The GPU index from `nvidia-smi` (e.g., 0, 1).
    - **Extra Args**: Optional ComfyUI arguments for this specific worker.
 4. **Save** and  launch the local worker.
@@ -56,8 +56,7 @@
 4. **Choose** "Remote".
 5. **Configure** your remote worker:
    - **Name**: A descriptive name for the worker (e.g., "Server Rack GPU 0")
-   - **Host**: The remote worker's IP address.
-   - **Port**: The port number used when launching ComfyUI on the remote master/worker (e.g., 8188).
+   - **Connection**: The worker endpoint (e.g., 192.168.1.100:8188, http://10.0.0.50:8189). The system will auto-detect the worker type.
 6. **Save** the remote worker configuration.
   
 ## Cloud workers
@@ -107,8 +106,8 @@ comfy model download --url https://huggingface.co/black-forest-labs/FLUX.1-dev/r
 6. **Click** "Add Worker."
 7. **Choose** "Cloud".
 8. **Configure** your cloud worker:
-	- **Host**: The ComfyUI Runpod address. For example: `wcegfo9tbbml9l-8188.proxy.runpod.net`
-	- **Port**: 443
+	- **Name**: A descriptive name for the worker (e.g., "Runpod RTX 4090")
+	- **Connection**: The secure worker endpoint. For example: `https://wcegfo9tbbml9l-8188.proxy.runpod.net` or `wcegfo9tbbml9l-8188.proxy.runpod.net`
 9. **Save** the remote worker configuration.
 
 ---
@@ -135,6 +134,6 @@ comfy model download --url https://huggingface.co/black-forest-labs/FLUX.1-dev/r
 6. **Click** "Add Worker."
 7. **Choose** "Cloud".
 8. **Configure** your cloud worker:
-   - **Host**: The remote worker's IP address/domain
-   - **Port**: 443
+   - **Name**: A descriptive name for the worker (e.g., "Cloud GPU 1")
+   - **Connection**: The secure worker endpoint (e.g., `https://your-tunnel.trycloudflare.com`, `your-worker.domain.com`)
 9. **Save** the remote worker configuration.

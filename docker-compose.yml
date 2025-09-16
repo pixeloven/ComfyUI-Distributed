@@ -1,0 +1,47 @@
+services:
+  comfy-master:
+    image: ghcr.io/pixeloven/comfyui-docker/core:cuda-latest
+    user: ${PUID:-1000}:${PGID:-1000}
+    container_name: comfy-master
+    network_mode: host
+    environment:
+      - PUID=${PUID:-1000}
+      - PGID=${PGID:-1000}
+      - COMFY_PORT=8188
+      - CLI_ARGS=--enable-cors-header
+      - CUDA_VISIBLE_DEVICES=0
+    volumes:
+      - comfyui_data:/data
+      # Mount models and other ComfyUI directories
+      - ./data/comfy/models:/data/comfy/models
+      - ./data/comfy/output:/data/comfy/output
+      - ./data/comfy/user/default/workflows:/data/comfy/user/default/workflows
+
+      # Mount project into custom_nodes directory
+      - ./:/data/comfy/custom_nodes/ComfyUI-Distributed
+    runtime: nvidia
+  
+  comfy-local-worker:
+    image: ghcr.io/pixeloven/comfyui-docker/core:cuda-latest
+    user: ${PUID:-1000}:${PGID:-1000}
+    container_name: comfy-local-worker
+    network_mode: host
+    environment:
+      - PUID=${PUID:-1000}
+      - PGID=${PGID:-1000}
+      - COMFY_PORT=8189
+      - CLI_ARGS=--enable-cors-header
+      - CUDA_VISIBLE_DEVICES=0
+    volumes:
+      - comfyui_data:/data
+      # Mount models and other ComfyUI directories
+      - ./data/comfy/models:/data/comfy/models
+      - ./data/comfy/output:/data/comfy/output
+      - ./data/comfy/user/default/workflows:/data/comfy/user/default/workflows
+
+      # Mount project into custom_nodes directory
+      - ./:/data/comfy/custom_nodes/ComfyUI-Distributed
+    runtime: nvidia
+
+volumes: 
+  comfyui_data:

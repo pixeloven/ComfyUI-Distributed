@@ -94,7 +94,48 @@ class DistributedExtension {
         try {
             this.config = await this.api.getConfig();
             this.log("Loaded config: " + JSON.stringify(this.config), "debug");
-            
+
+            // Migrate legacy configurations to new connection string format
+            let configNeedsSaving = false;
+            if (this.config.workers) {
+                this.config.workers.forEach(worker => {
+                    // Add connection string if missing
+                    if (!worker.connection && (worker.host || worker.port)) {
+                        worker.connection = this.generateConnectionString(worker);
+                        worker._needsMigration = true;
+                        configNeedsSaving = true;
+                        this.log(`Migrated worker ${worker.id} to connection string: ${worker.connection}`, "debug");
+                    }
+
+                    // Ensure worker type is set
+                    if (!worker.type) {
+                        worker.type = this.detectWorkerType(worker);
+                        worker._needsMigration = true;
+                        configNeedsSaving = true;
+                        this.log(`Set worker ${worker.id} type: ${worker.type}`, "debug");
+                    }
+                });
+            }
+
+            // Save migrated config if needed
+            if (configNeedsSaving) {
+                try {
+                    // Update each migrated worker individually
+                    for (const worker of this.config.workers) {
+                        if (worker._needsMigration) {
+                            await this.api.updateWorker(worker.id, {
+                                connection: worker.connection,
+                                type: worker.type
+                            });
+                            delete worker._needsMigration;
+                        }
+                    }
+                    this.log("Saved migrated worker configurations", "debug");
+                } catch (error) {
+                    this.log(`Failed to save migrated config: ${error}`, "error");
+                }
+            }
+
             // Ensure default flag values
             if (!this.config.settings) {
                 this.config.settings = {};
@@ -102,7 +143,7 @@ class DistributedExtension {
             if (this.config.settings.has_auto_populated_workers === undefined) {
                 this.config.settings.has_auto_populated_workers = false;
             }
-            
+
             // Load stored master CUDA device
             this.masterCudaDevice = this.config?.master?.cuda_device ?? undefined;
             
@@ -789,17 +830,84 @@ class DistributedExtension {
     }
 
     isRemoteWorker(worker) {
-        // Check if explicitly marked as cloud worker
-        if (worker.type === "cloud") {
-            return true;
+        // Primary check: use explicit worker type if available
+        if (worker.type) {
+            return worker.type === "cloud" || worker.type === "remote";
         }
-        // Otherwise check by host (backward compatibility)
+
+        // Fallback: check by host (backward compatibility)
         const host = worker.host || window.location.hostname;
         return host !== "localhost" && host !== "127.0.0.1" && host !== window.location.hostname;
     }
 
     isCloudWorker(worker) {
         return worker.type === "cloud";
+    }
+
+    isLocalWorker(worker) {
+        // Primary check: use explicit worker type if available
+        if (worker.type) {
+            return worker.type === "local";
+        }
+
+        // Fallback: check by host (backward compatibility)
+        const host = worker.host || window.location.hostname;
+        return host === "localhost" || host === "127.0.0.1" || host === window.location.hostname;
+    }
+
+    getWorkerConnectionUrl(worker) {
+        // If worker has a connection string, parse it for URL
+        if (worker.connection) {
+            // Simple check if it's already a full URL
+            if (worker.connection.startsWith('http://') || worker.connection.startsWith('https://')) {
+                return worker.connection;
+            }
+            // If it's host:port format, construct URL
+            if (worker.connection.includes(':')) {
+                const isSecure = worker.type === 'cloud' || worker.connection.endsWith(':443');
+                const protocol = isSecure ? 'https' : 'http';
+                return `${protocol}://${worker.connection}`;
+            }
+        }
+
+        // Fallback to legacy host/port construction
+        const host = worker.host || 'localhost';
+        const port = worker.port || 8189;
+        const isSecure = worker.type === 'cloud' || port === 443;
+        const protocol = isSecure ? 'https' : 'http';
+
+        return `${protocol}://${host}:${port}`;
+    }
+
+    generateConnectionString(worker) {
+        if (!worker.host || !worker.port) {
+            return 'localhost:8189';
+        }
+
+        const host = worker.host;
+        const port = worker.port;
+        const isSecure = worker.type === 'cloud' || port === 443;
+
+        if (isSecure) {
+            return port === 443 ? `https://${host}` : `https://${host}:${port}`;
+        } else {
+            return port === 80 ? `http://${host}` : `${host}:${port}`;
+        }
+    }
+
+    detectWorkerType(worker) {
+        if (worker.type) return worker.type;
+
+        const host = worker.host || 'localhost';
+        const port = worker.port || 8189;
+
+        if (host === 'localhost' || host === '127.0.0.1') {
+            return 'local';
+        } else if (port === 443 || host.includes('trycloudflare.com') || host.includes('ngrok.io')) {
+            return 'cloud';
+        } else {
+            return 'remote';
+        }
     }
 
     getMasterUrl() {
@@ -1008,18 +1116,15 @@ class DistributedExtension {
     async saveWorkerSettings(workerId) {
         const worker = this.config.workers.find(w => w.id === workerId);
         if (!worker) return;
-        
+
         // Get form values
         const name = document.getElementById(`name-${workerId}`).value;
         const workerType = document.getElementById(`worker-type-${workerId}`).value;
-        const isRemote = workerType === 'remote' || workerType === 'cloud';
-        const isCloud = workerType === 'cloud';
-        const host = isRemote ? document.getElementById(`host-${workerId}`).value : window.location.hostname;
-        const port = parseInt(document.getElementById(`port-${workerId}`).value);
-        const cudaDevice = isRemote ? undefined : parseInt(document.getElementById(`cuda-${workerId}`).value);
-        const extraArgs = isRemote ? undefined : document.getElementById(`args-${workerId}`).value;
-        
-        // Validate
+        const connectionInput = worker._connectionInput;
+        const cudaDeviceInput = document.getElementById(`cuda-${workerId}`);
+        const extraArgsInput = document.getElementById(`args-${workerId}`);
+
+        // Validate name
         if (!name.trim()) {
             app.extensionManager.toast.add({
                 severity: "error",
@@ -1029,111 +1134,94 @@ class DistributedExtension {
             });
             return;
         }
-        
-        if ((workerType === 'remote' || workerType === 'cloud') && !host.trim()) {
+
+        // Get connection string
+        const connectionString = connectionInput ? connectionInput.getValue() : '';
+        if (!connectionString.trim()) {
             app.extensionManager.toast.add({
                 severity: "error",
                 summary: "Validation Error",
-                detail: "Host is required for remote workers",
+                detail: "Connection string is required",
                 life: 3000
             });
             return;
         }
-        
-        if (!isCloud && (isNaN(port) || port < 1 || port > 65535)) {
+
+        // Check if connection was validated
+        const validationResult = connectionInput ? connectionInput.getValidationResult() : null;
+        if (!validationResult || validationResult.status !== 'valid') {
             app.extensionManager.toast.add({
                 severity: "error",
                 summary: "Validation Error",
-                detail: "Port must be between 1 and 65535",
+                detail: "Please enter a valid connection string",
                 life: 3000
             });
             return;
         }
-        
-        // Check for port conflicts
-        // Remote workers can reuse ports, but local workers cannot share ports with each other or master
-        if (!isRemote) {
-            // Check if port conflicts with master
-            const masterPort = parseInt(window.location.port) || (window.location.protocol === 'https:' ? 443 : 80);
-            if (port === masterPort) {
-                app.extensionManager.toast.add({
-                    severity: "error",
-                    summary: "Port Conflict",
-                    detail: `Port ${port} is already in use by the master server`,
-                    life: 3000
-                });
-                return;
-            }
-            
-            // Check if port conflicts with other local workers
-            const localPortConflict = this.config.workers.some(w => 
-                w.id !== workerId && 
-                w.port === port && 
-                !w.host // local workers have no host or host is null
-            );
-            
-            if (localPortConflict) {
-                app.extensionManager.toast.add({
-                    severity: "error",
-                    summary: "Port Conflict",
-                    detail: `Port ${port} is already in use by another local worker`,
-                    life: 3000
-                });
-                return;
-            }
-        } else {
-            // For remote workers, only check conflicts with other workers on the same host
-            const sameHostConflict = this.config.workers.some(w => 
-                w.id !== workerId && 
-                w.port === port && 
-                w.host === host.trim()
-            );
-            
-            if (sameHostConflict) {
-                app.extensionManager.toast.add({
-                    severity: "error",
-                    summary: "Port Conflict",
-                    detail: `Port ${port} is already in use by another worker on ${host}`,
-                    life: 3000
-                });
-                return;
-            }
-        }
-        
+
+        // Get additional fields based on worker type
+        const isLocal = workerType === 'local';
+        const cudaDevice = isLocal && cudaDeviceInput ? parseInt(cudaDeviceInput.value) : undefined;
+        const extraArgs = isLocal && extraArgsInput ? extraArgsInput.value.trim() : undefined;
+
+        // Use manual type override if set, otherwise use detected type
+        const finalWorkerType = worker._manualType || validationResult.details.worker_type;
+
         try {
-            await this.api.updateWorker(workerId, {
+            // Prepare update data
+            const updateData = {
                 name: name.trim(),
-                type: workerType,
-                host: isRemote ? host.trim() : null,
-                port: port,
-                cuda_device: isRemote ? null : cudaDevice,
-                extra_args: isRemote ? null : (extraArgs ? extraArgs.trim() : "")
-            });
-            
+                connection: connectionString.trim(),
+                type: finalWorkerType
+            };
+
+            // Add local worker specific fields
+            if (isLocal) {
+                if (cudaDevice !== undefined) {
+                    updateData.cuda_device = cudaDevice;
+                }
+                if (extraArgs !== undefined) {
+                    updateData.extra_args = extraArgs;
+                }
+            }
+
+            await this.api.updateWorker(workerId, updateData);
+
             // Update local config
             worker.name = name.trim();
-            worker.type = workerType;
-            if (isRemote) {
-                worker.host = host.trim();
+            worker.connection = connectionString.trim();
+            worker.type = finalWorkerType;
+
+            // Update legacy fields from parsed connection
+            if (validationResult.details) {
+                worker.host = validationResult.details.host;
+                worker.port = validationResult.details.port;
+            }
+
+            // Handle type-specific fields
+            if (isLocal) {
+                if (cudaDevice !== undefined) worker.cuda_device = cudaDevice;
+                if (extraArgs !== undefined) worker.extra_args = extraArgs;
+            } else {
                 delete worker.cuda_device;
                 delete worker.extra_args;
-            } else {
-                delete worker.host;
-                worker.cuda_device = cudaDevice;
-                worker.extra_args = extraArgs ? extraArgs.trim() : "";
             }
-            worker.port = port;
-            
+
+            // Clean up temporary properties
+            delete worker._connectionValidation;
+            delete worker._pendingConnection;
+            delete worker._manualType;
+
             // Sync to state
             this.state.updateWorker(workerId, { enabled: worker.enabled });
-            
+
             app.extensionManager.toast.add({
                 severity: "success",
                 summary: "Settings Saved",
                 detail: `Worker ${name} settings updated`,
                 life: 3000
             });
-            
+
             // Refresh the UI
             if (this.panelElement) {
                 renderSidebarContent(this, this.panelElement);
