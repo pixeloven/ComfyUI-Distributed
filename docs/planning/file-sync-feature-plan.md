@@ -262,12 +262,6 @@ class SyncStatusNode:
 - [ ] Support for files up to 10GB
 - [ ] Bandwidth-efficient transfers (compression >30%)
 
-## Timeline Estimate
-**Total: 7-11 weeks**
-- Phase 1: 2-3 weeks
-- Phase 2: 2-3 weeks
-- Phase 3: 2-3 weeks
-- Phase 4: 1-2 weeks
 
 ## Risks and Mitigation
 

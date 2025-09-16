@@ -191,12 +191,6 @@ class DynamicWorkflowLoader(ComfyNode):
 - [ ] Successful integration of URL-based resource loading
 - [ ] Dynamic resource allocation working across CPU/GPU
 
-## Timeline Estimate
-**Total: 8-12 weeks**
-- Phase 1: 2-3 weeks
-- Phase 2: 3-4 weeks
-- Phase 3: 2-3 weeks
-- Phase 4: 1-2 weeks
 
 ## Dependencies and Risks
 

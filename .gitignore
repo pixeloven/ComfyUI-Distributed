@@ -11,8 +11,8 @@ node.zip
 .claude/
 
 # Ignore Models for testing
-data/models
-data/output
+data/*
+!data/comfy/user/default/workflows
 
 # Ignore generated project files
 gpu_config.json

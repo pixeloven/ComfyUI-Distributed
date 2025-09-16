@@ -1,44 +1,47 @@
 services:
-  comfy-cpu:
-    image: ghcr.io/pixeloven/comfyui-docker/core:cpu-latest
-    user: ${PUID:-1000}:${PGID:-1000}
-    container_name: comfy-cpu-react-extension-prod
-    environment:
-      - PUID=${PUID:-1000}
-      - PGID=${PGID:-1000}
-      - COMFY_PORT=${COMFY_PORT:-8188}
-      - CLI_ARGS=--cpu
-    ports:
-      - "${COMFY_PORT:-8188}:${COMFY_PORT:-8188}"
-    volumes:
-      # Mount models and other ComfyUI directories
-      - comfyui_data:/data
-      - comfyui_output:/output
-      # Mount ComfyUI custom_nodes directory
-      - ./:/data/comfy/custom_nodes/ComfyUI-Distributed
-      - ./data/models:/data/comfy/models
-      - ./data/output:/data/comfy/output
-  comfy-nvidia:
+  comfy-master:
     image: ghcr.io/pixeloven/comfyui-docker/core:cuda-latest
     user: ${PUID:-1000}:${PGID:-1000}
-    container_name: comfy-nvidia-react-extension-prod
+    container_name: comfy-master
     environment:
       - PUID=${PUID:-1000}
       - PGID=${PGID:-1000}
-      - COMFY_PORT=${COMFY_PORT:-8188}
-      - CLI_ARGS=
+      - COMFY_PORT=8188
+      - CLI_ARGS=--enable-cors-header
+      - CUDA_VISIBLE_DEVICES=0
     ports:
       - "${COMFY_PORT:-8188}:${COMFY_PORT:-8188}"
     volumes:
-      # Mount models and other ComfyUI directories
       - comfyui_data:/data
-      - comfyui_output:/output
-      # Mount ComfyUI custom_nodes directory
-      - ./:/data/comfy/custom_nodes/ComfyUI-Distributed
-      - ./data/models:/data/comfy/models
-      - ./data/output:/data/comfy/output
-    runtime: nvidia
+      # Mount models and other ComfyUI directories
+      - ./data/comfy/models:/data/comfy/models
+      - ./data/comfy/output:/data/comfy/output
+      - ./data/comfy/user/default/workflows:/data/comfy/user/default/workflows
 
-volumes:
+      # Mount project into custom_nodes directory
+      - ./:/data/comfy/custom_nodes/ComfyUI-Distributed
+    runtime: nvidia
+  
+  comfy-local-worker:
+    image: ghcr.io/pixeloven/comfyui-docker/core:cuda-latest
+    user: ${PUID:-1000}:${PGID:-1000}
+    container_name: comfy-local-worker
+    environment:
+      - PUID=${PUID:-1000}
+      - PGID=${PGID:-1000}
+      - COMFY_PORT=8189
+      - CLI_ARGS=--enable-cors-header
+    ports:
+      - "${COMFY_PORT:-8188}:${COMFY_PORT:-8188}"
+    volumes:
+      - comfyui_data:/data
+      # Mount models and other ComfyUI directories
+      - ./data/comfy/models:/data/comfy/models
+      - ./data/comfy/output:/data/comfy/output
+      - ./data/comfy/user/default/workflows:/data/comfy/user/default/workflows
+
+      # Mount project into custom_nodes directory
+      - ./:/data/comfy/custom_nodes/ComfyUI-Distributed
+
+volumes: 
   comfyui_data:
-  comfyui_output:

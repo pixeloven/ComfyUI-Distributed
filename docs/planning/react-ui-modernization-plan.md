@@ -121,13 +121,6 @@ App.tsx
 - [ ] Performance equal or better than current implementation
 - [ ] Seamless integration with ComfyUI ecosystem
 
-## Timeline Estimate
-**Total: 6-9 weeks**
-- Phase 1: 2-3 days
-- Phase 2: 1-2 weeks
-- Phase 3: 2-3 weeks
-- Phase 4: 1 week
-- Phase 5: 3-5 days
 
 ## Next Steps
 1. Review and approve project plan
