@@ -1,11 +1,15 @@
 import { useEffect, useState } from 'react';
 import { useAppStore } from '@/stores/appStore';
 import { createApiClient } from '@/services/apiClient';
+import { ToastService } from '@/services/toastService';
 import { WorkerCard } from './WorkerCard';
 import { MasterCard } from './MasterCard';
+import { SettingsPanel } from './SettingsPanel';
 import { UI_COLORS } from '@/utils/constants';
+import type { Worker } from '@/types';
 
 const apiClient = createApiClient(window.location.origin);
+const toastService = ToastService.getInstance();
 
 export function WorkerManagementPanel() {
   const {
@@ -20,6 +24,8 @@ export function WorkerManagementPanel() {
     setWorkerStatus,
   } = useAppStore();
   const [isLoading, setIsLoading] = useState(true);
+  const [interruptLoading, setInterruptLoading] = useState(false);
+  const [clearMemoryLoading, setClearMemoryLoading] = useState(false);
 
   useEffect(() => {
     loadConfiguration();
@@ -142,6 +148,135 @@ export function WorkerManagementPanel() {
     }
   };
 
+  const performWorkerOperation = async (
+    endpoint: string,
+    setLoading: (loading: boolean) => void,
+    operationName: string
+  ) => {
+    const enabledWorkers = workers.filter(worker => worker.enabled);
+
+    if (enabledWorkers.length === 0) {
+      toastService.warn('No Workers', 'No enabled workers available for this operation');
+      return;
+    }
+
+    setLoading(true);
+
+    const results = await Promise.allSettled(
+      enabledWorkers.map(async (worker) => {
+        const workerUrl = worker.connection || `http://${worker.host}:${worker.port}`;
+        const url = `${workerUrl}${endpoint}`;
+
+        try {
+          const response = await fetch(url, {
+            method: 'POST',
+            mode: 'cors',
+            headers: { 'Content-Type': 'application/json' },
+            signal: AbortSignal.timeout(10000) // 10 second timeout
+          });
+
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          }
+
+          console.log(`${operationName} successful on worker ${worker.name}`);
+          return { worker, success: true };
+        } catch (error) {
+          console.error(`${operationName} failed on worker ${worker.name}:`, error);
+          return { worker, success: false, error };
+        }
+      })
+    );
+
+    const failures = results
+      .filter(result => result.status === 'rejected' || !result.value.success)
+      .map(result => result.status === 'fulfilled' ? result.value.worker.name : 'Unknown worker');
+
+    const successCount = enabledWorkers.length - failures.length;
+
+    toastService.workerOperationResult(
+      operationName,
+      successCount,
+      enabledWorkers.length,
+      failures
+    );
+
+    setLoading(false);
+  };
+
+  const handleInterruptWorkers = () => {
+    performWorkerOperation(
+      '/interrupt',
+      setInterruptLoading,
+      'Interrupt operation'
+    );
+  };
+
+  const handleClearMemory = () => {
+    performWorkerOperation(
+      '/distributed/clear_memory',
+      setClearMemoryLoading,
+      'Clear memory operation'
+    );
+  };
+
+  const handleAddWorker = async () => {
+    try {
+      // Auto-generate worker settings like legacy UI
+      const workerCount = workers.length;
+      const masterPort = master?.port || 8188;
+      const newPort = masterPort + 1 + workerCount;
+
+      // Generate unique worker ID
+      const workerId = `localhost:${newPort}`;
+
+      // Create new worker with auto-generated settings (matching legacy behavior)
+      const newWorker: Worker = {
+        id: workerId,
+        name: `Worker ${workerCount + 1}`,
+        host: 'localhost',
+        port: newPort,
+        enabled: false, // Start disabled like legacy
+        type: 'local',
+        connection: `localhost:${newPort}`,
+        status: 'offline',
+        cuda_device: undefined, // Auto-detect like legacy
+        extra_args: '--listen'
+      };
+
+      // Create worker data for API
+      const workerData = {
+        id: workerId,
+        name: newWorker.name,
+        connection: newWorker.connection,
+        host: newWorker.host,
+        port: newWorker.port,
+        type: newWorker.type,
+        enabled: newWorker.enabled,
+        cuda_device: newWorker.cuda_device,
+        extra_args: newWorker.extra_args
+      };
+
+      // Add to backend
+      await apiClient.updateWorker(workerId, workerData);
+
+      // Add to local state
+      addWorker(newWorker);
+
+      toastService.success(
+        'Worker Added',
+        `${newWorker.name} has been created`
+      );
+
+    } catch (error) {
+      console.error('Failed to add worker:', error);
+      toastService.error(
+        'Failed to Add Worker',
+        error instanceof Error ? error.message : 'Unknown error occurred'
+      );
+    }
+  };
+
   if (isLoading) {
     return (
       <div style={{
@@ -186,31 +321,129 @@ export function WorkerManagementPanel() {
           marginBottom: '15px'
         }}>
           {workers.length === 0 ? (
-            <div style={{
-              padding: '20px',
-              textAlign: 'center',
-              color: UI_COLORS.MUTED_TEXT,
-              border: `2px dashed ${UI_COLORS.BORDER_LIGHT}`,
-              borderRadius: '6px',
-              background: 'rgba(255, 255, 255, 0.02)'
-            }}>
+            <div
+              style={{
+                padding: '20px',
+                textAlign: 'center',
+                color: UI_COLORS.MUTED_TEXT,
+                border: `2px dashed ${UI_COLORS.BORDER_LIGHT}`,
+                borderRadius: '6px',
+                background: 'rgba(255, 255, 255, 0.02)',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease'
+              }}
+              onClick={handleAddWorker}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = '#007acc';
+                e.currentTarget.style.color = '#fff';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = UI_COLORS.BORDER_LIGHT;
+                e.currentTarget.style.color = UI_COLORS.MUTED_TEXT;
+              }}
+            >
               + Click here to add your first worker
             </div>
           ) : (
-            workers.map(worker => (
-              <WorkerCard
-                key={worker.id}
-                worker={worker}
-                onToggle={handleToggleWorker}
-                onStart={handleStartWorker}
-                onStop={handleStopWorker}
-                onDelete={handleDeleteWorker}
-                onSaveSettings={handleSaveWorkerSettings}
-              />
-            ))
+            <>
+              {workers.map(worker => (
+                <WorkerCard
+                  key={worker.id}
+                  worker={worker}
+                  onToggle={handleToggleWorker}
+                  onStart={handleStartWorker}
+                  onStop={handleStopWorker}
+                  onDelete={handleDeleteWorker}
+                  onSaveSettings={handleSaveWorkerSettings}
+                />
+              ))}
+
+              {/* Add Worker Button */}
+              <div
+                style={{
+                  padding: '12px',
+                  textAlign: 'center',
+                  color: UI_COLORS.MUTED_TEXT,
+                  border: `1px dashed ${UI_COLORS.BORDER_LIGHT}`,
+                  borderRadius: '4px',
+                  background: 'rgba(255, 255, 255, 0.01)',
+                  cursor: 'pointer',
+                  marginTop: '8px',
+                  transition: 'all 0.2s ease'
+                }}
+                onClick={handleAddWorker}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = '#007acc';
+                  e.currentTarget.style.color = '#fff';
+                  e.currentTarget.style.background = 'rgba(0, 122, 204, 0.1)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = UI_COLORS.BORDER_LIGHT;
+                  e.currentTarget.style.color = UI_COLORS.MUTED_TEXT;
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.01)';
+                }}
+              >
+                + Add New Worker
+              </div>
+            </>
           )}
         </div>
+
+        {/* Actions Section */}
+        <div style={{
+          paddingTop: '10px',
+          marginBottom: '15px',
+          borderTop: '1px solid #444'
+        }}>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button
+              style={{
+                flex: 1,
+                padding: '6px 14px',
+                backgroundColor: '#555',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontSize: '12px',
+                fontWeight: '500',
+                transition: 'all 0.2s ease'
+              }}
+              onClick={handleClearMemory}
+              disabled={clearMemoryLoading || workers.filter(w => w.enabled).length === 0}
+              title="Clear VRAM on all enabled worker GPUs (not master)"
+              className="distributed-button"
+            >
+              {clearMemoryLoading ? 'Clearing...' : 'Clear Worker VRAM'}
+            </button>
+
+            <button
+              style={{
+                flex: 1,
+                padding: '6px 14px',
+                backgroundColor: '#555',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontSize: '12px',
+                fontWeight: '500',
+                transition: 'all 0.2s ease'
+              }}
+              onClick={handleInterruptWorkers}
+              disabled={interruptLoading || workers.filter(w => w.enabled).length === 0}
+              title="Cancel/interrupt execution on all enabled worker GPUs"
+              className="distributed-button"
+            >
+              {interruptLoading ? 'Interrupting...' : 'Interrupt Workers'}
+            </button>
+          </div>
+        </div>
+
+        {/* Settings Panel */}
+        <SettingsPanel />
       </div>
+
     </div>
   );
 }

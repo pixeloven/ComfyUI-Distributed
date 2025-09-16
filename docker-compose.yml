@@ -1,8 +1,8 @@
 services:
-  comfy-master:
+  comfy-master-react:
     image: ghcr.io/pixeloven/comfyui-docker/core:cuda-latest
     user: ${PUID:-1000}:${PGID:-1000}
-    container_name: comfy-master
+    container_name: comfy-master-react
     network_mode: host
     environment:
       - PUID=${PUID:-1000}
@@ -10,6 +10,7 @@ services:
       - COMFY_PORT=8188
       - CLI_ARGS=--enable-cors-header
       - CUDA_VISIBLE_DEVICES=0
+      - COMFY_UI_TYPE=react  # Environment variable to switch UI
     volumes:
       - comfyui_data:/data
       # Mount models and other ComfyUI directories
@@ -20,18 +21,19 @@ services:
       # Mount project into custom_nodes directory
       - ./:/data/comfy/custom_nodes/ComfyUI-Distributed
     runtime: nvidia
-  
-  comfy-local-worker:
+
+  comfy-master-legacy:
     image: ghcr.io/pixeloven/comfyui-docker/core:cuda-latest
     user: ${PUID:-1000}:${PGID:-1000}
-    container_name: comfy-local-worker
+    container_name: comfy-master-legacy
     network_mode: host
     environment:
       - PUID=${PUID:-1000}
       - PGID=${PGID:-1000}
-      - COMFY_PORT=8189
+      - COMFY_PORT=8189  # Different port for legacy UI
       - CLI_ARGS=--enable-cors-header
       - CUDA_VISIBLE_DEVICES=0
+      - COMFY_UI_TYPE=legacy  # Environment variable to switch UI
     volumes:
       - comfyui_data:/data
       # Mount models and other ComfyUI directories

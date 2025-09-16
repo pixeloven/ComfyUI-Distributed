@@ -1,6 +1,10 @@
 # Missing Features Analysis & Implementation Priority
 
+> **📄 Part of**: [React UI Modernization Project](../react-ui-modernization-plan.md) | **📁 Documentation Index**: [README.md](README.md)
+
 Based on the comprehensive feature comparison, the React UI is currently at **23% completion** (16/70 features). This document outlines the critical gaps and provides a roadmap for achieving feature parity.
+
+> **📊 Detailed Feature Status**: See [feature-comparison-matrix.md](feature-comparison-matrix.md) for the complete 70-feature breakdown.
 
 ## Executive Summary
 

@@ -1,127 +1,156 @@
-import React, { useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { useAppStore } from '@/stores/appStore';
-import { createApiClient } from '@/services/apiClient';
-import { UI_STYLES, BUTTON_STYLES } from '@/utils/constants';
+import React, { useState, useEffect, useCallback } from 'react';
+import { ConnectionService } from '../services/connectionService';
+import { ConnectionInputProps, ConnectionInputState } from '../types/connection';
+import './ConnectionInput.css';
 
-const apiClient = createApiClient(window.location.origin);
+export const ConnectionInput: React.FC<ConnectionInputProps> = ({
+  value = '',
+  placeholder = 'localhost:8189 or https://host:port',
+  showPresets = true,
+  showTestButton = true,
+  validateOnInput = true,
+  debounceMs = 500,
+  disabled = false,
+  onChange,
+  onValidation,
+  onConnectionTest
+}) => {
+  const [inputValue, setInputValue] = useState(value);
+  const [state, setState] = useState<ConnectionInputState>('normal');
+  const [validationMessage, setValidationMessage] = useState<string>('');
+  const [messageType, setMessageType] = useState<'success' | 'error' | 'warning' | 'info'>('info');
 
-export function ConnectionInput() {
-  const { t } = useTranslation();
-  const { connectionState, setConnectionState, setMasterIP } = useAppStore();
-  const [inputValue, setInputValue] = useState(connectionState.masterIP || window.location.hostname);
-  const [isValidating, setIsValidating] = useState(false);
+  const connectionService = ConnectionService.getInstance();
 
-  const validateConnection = async () => {
+  // Debounced validation
+  useEffect(() => {
+    if (!validateOnInput || !inputValue.trim()) {
+      setState('normal');
+      setValidationMessage('');
+      return;
+    }
+
+    setState('typing');
+
+    const timeoutId = setTimeout(async () => {
+      setState('validating');
+
+      try {
+        const result = await connectionService.validateConnection(inputValue, false);
+        const formatted = connectionService.formatValidationMessage(result);
+
+        setValidationMessage(formatted.message);
+        setMessageType(formatted.type);
+        setState(result.status === 'valid' ? 'valid' : result.status === 'invalid' ? 'invalid' : 'error');
+
+        onValidation?.(result);
+      } catch (error) {
+        setState('error');
+        setValidationMessage('✗ Validation failed');
+        setMessageType('error');
+      }
+    }, debounceMs);
+
+    return () => clearTimeout(timeoutId);
+  }, [inputValue, validateOnInput, debounceMs, onValidation]);
+
+  // Update input when value prop changes
+  useEffect(() => {
+    setInputValue(value);
+  }, [value]);
+
+  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value;
+    setInputValue(newValue);
+    onChange?.(newValue);
+  }, [onChange]);
+
+  const handlePresetClick = useCallback((presetValue: string) => {
+    setInputValue(presetValue);
+    onChange?.(presetValue);
+  }, [onChange]);
+
+  const handleTestConnection = useCallback(async () => {
     if (!inputValue.trim()) return;
 
-    setIsValidating(true);
-    setConnectionState({ isValidatingConnection: true });
+    setState('testing');
+    setValidationMessage('Testing connection...');
+    setMessageType('info');
 
     try {
-      // Test connection to the entered IP
-      const testUrl = `http://${inputValue}:${window.location.port || '8188'}/system_stats`;
-      await apiClient.checkStatus(testUrl);
+      const result = await connectionService.validateConnection(inputValue, true, 10);
+      const formatted = connectionService.formatValidationMessage(result);
 
-      setMasterIP(inputValue);
-      setConnectionState({
-        isConnected: true,
-        isValidatingConnection: false,
-        connectionError: undefined
-      });
+      setValidationMessage(formatted.message);
+      setMessageType(formatted.type);
+      setState(result.status === 'valid' && result.connectivity?.reachable ? 'valid' : 'error');
+
+      onConnectionTest?.(result);
     } catch (error) {
-      setConnectionState({
-        isConnected: false,
-        isValidatingConnection: false,
-        connectionError: error instanceof Error ? error.message : 'Connection failed'
-      });
-    } finally {
-      setIsValidating(false);
+      setState('error');
+      setValidationMessage('✗ Connection test failed');
+      setMessageType('error');
     }
+  }, [inputValue, onConnectionTest]);
+
+  const getInputClassName = () => {
+    const baseClass = 'connection-input';
+    const stateClass = `connection-input--${state}`;
+    const disabledClass = disabled ? 'connection-input--disabled' : '';
+    return `${baseClass} ${stateClass} ${disabledClass}`.trim();
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    validateConnection();
+  const getMessageClassName = () => {
+    return `connection-message connection-message--${messageType}`;
   };
 
-  const parseStyle = (styleString: string): React.CSSProperties => {
-    const style: React.CSSProperties = {};
-    if (!styleString) return style;
-
-    styleString.split(';').forEach(rule => {
-      const [property, value] = rule.split(':').map(s => s.trim());
-      if (property && value) {
-        const camelCaseProperty = property.replace(/-([a-z])/g, (_, letter) => letter.toUpperCase());
-        (style as any)[camelCaseProperty] = value;
-      }
-    });
-
-    return style;
-  };
+  const presets = connectionService.getConnectionPresets();
 
   return (
-    <div style={{ padding: '12px', borderBottom: '1px solid #444' }}>
-      <h3 style={{ marginBottom: '12px', color: '#fff' }}>{t('connection.title')}</h3>
+    <div className="connection-input-container">
+      <div className="connection-input-wrapper">
+        <input
+          type="text"
+          value={inputValue}
+          onChange={handleInputChange}
+          placeholder={placeholder}
+          disabled={disabled || state === 'validating' || state === 'testing'}
+          className={getInputClassName()}
+        />
 
-      <form onSubmit={handleSubmit} style={{ display: 'flex', gap: '8px', alignItems: 'flex-end' }}>
-        <div style={{ ...parseStyle(UI_STYLES.formGroup), flex: 1 }}>
-          <label style={parseStyle(UI_STYLES.formLabel)}>
-            {t('connection.masterIP')}:
-          </label>
-          <input
-            type="text"
-            style={{
-              ...parseStyle(UI_STYLES.formInput),
-              borderColor: connectionState.connectionError ? '#c04c4c' : '#444'
-            }}
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            placeholder={t('connection.placeholder')}
-            disabled={isValidating}
-          />
-        </div>
+        {showTestButton && (
+          <button
+            type="button"
+            onClick={handleTestConnection}
+            disabled={disabled || !inputValue.trim() || state === 'validating' || state === 'testing'}
+            className="connection-test-button"
+          >
+            {state === 'testing' ? 'Testing...' : 'Test'}
+          </button>
+        )}
+      </div>
 
-        <button
-          type="submit"
-          style={{
-            ...parseStyle(BUTTON_STYLES.base),
-            backgroundColor: connectionState.isConnected ? '#4a7c4a' : '#555',
-            padding: '6px 14px',
-            minWidth: '80px'
-          }}
-          disabled={isValidating}
-          className="distributed-button"
-        >
-          {isValidating ? 'Testing...' : connectionState.isConnected ? 'Connected' : 'Connect'}
-        </button>
-      </form>
-
-      {connectionState.connectionError && (
-        <div style={{
-          marginTop: '8px',
-          padding: '8px',
-          backgroundColor: '#7c4a4a',
-          color: '#fff',
-          borderRadius: '4px',
-          fontSize: '12px'
-        }}>
-          Error: {connectionState.connectionError}
+      {showPresets && (
+        <div className="connection-presets">
+          {presets.map((preset) => (
+            <button
+              key={preset.value}
+              type="button"
+              onClick={() => handlePresetClick(preset.value)}
+              disabled={disabled}
+              className="connection-preset-button"
+            >
+              {preset.label}
+            </button>
+          ))}
         </div>
       )}
 
-      {connectionState.isConnected && (
-        <div style={{
-          marginTop: '8px',
-          padding: '8px',
-          backgroundColor: '#4a7c4a',
-          color: '#fff',
-          borderRadius: '4px',
-          fontSize: '12px'
-        }}>
-          Connected to {connectionState.masterIP}
+      {validationMessage && (
+        <div className={getMessageClassName()}>
+          {validationMessage}
         </div>
       )}
     </div>
   );
-}
+};

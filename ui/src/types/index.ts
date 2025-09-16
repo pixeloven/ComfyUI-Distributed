@@ -8,6 +8,7 @@ export interface Worker {
   type?: 'local' | 'remote' | 'cloud';
   connection?: string;
   status?: 'online' | 'offline' | 'processing' | 'disabled';
+  extra_args?: string;
 }
 
 export interface MasterNode {

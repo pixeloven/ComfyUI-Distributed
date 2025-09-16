@@ -1,5 +1,9 @@
 # ComfyUI-Distributed: Legacy vs React UI Feature Comparison Matrix
 
+> **📄 Part of**: [React UI Modernization Project](../react-ui-modernization-plan.md) | **📁 Documentation Index**: [README.md](README.md)
+
+This document provides a comprehensive feature-by-feature comparison between the legacy vanilla JavaScript UI and the new React implementation.
+
 ## Status Legend
 - ✅ **Implemented**: Feature is fully implemented and functional
 - ⚠️ **Partial**: Feature is partially implemented or has limitations

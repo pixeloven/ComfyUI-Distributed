@@ -1,10 +1,15 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAppStore } from '@/stores/appStore';
+import { ToastService } from '@/services/toastService';
 import { UI_STYLES, BUTTON_STYLES } from '@/utils/constants';
+
+const toastService = ToastService.getInstance();
 
 export function ExecutionPanel() {
   const { executionState, workers, clearExecutionErrors } = useAppStore();
   const selectedWorkers = workers.filter(worker => worker.enabled && worker.status === 'online');
+  const [interruptLoading, setInterruptLoading] = useState(false);
+  const [clearMemoryLoading, setClearMemoryLoading] = useState(false);
 
   const parseStyle = (styleString: string): React.CSSProperties => {
     const style: React.CSSProperties = {};
@@ -21,12 +26,77 @@ export function ExecutionPanel() {
     return style;
   };
 
+  const performWorkerOperation = async (
+    endpoint: string,
+    setLoading: (loading: boolean) => void,
+    operationName: string
+  ) => {
+    const enabledWorkers = workers.filter(worker => worker.enabled);
+
+    if (enabledWorkers.length === 0) {
+      console.log(`No enabled workers for ${operationName}`);
+      toastService.warn('No Workers', 'No enabled workers available for this operation');
+      return;
+    }
+
+    setLoading(true);
+
+    const results = await Promise.allSettled(
+      enabledWorkers.map(async (worker) => {
+        const workerUrl = worker.connection || `http://${worker.host}:${worker.port}`;
+        const url = `${workerUrl}${endpoint}`;
+
+        try {
+          const response = await fetch(url, {
+            method: 'POST',
+            mode: 'cors',
+            headers: { 'Content-Type': 'application/json' },
+            signal: AbortSignal.timeout(10000) // 10 second timeout
+          });
+
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          }
+
+          console.log(`${operationName} successful on worker ${worker.name}`);
+          return { worker, success: true };
+        } catch (error) {
+          console.error(`${operationName} failed on worker ${worker.name}:`, error);
+          return { worker, success: false, error };
+        }
+      })
+    );
+
+    const failures = results
+      .filter(result => result.status === 'rejected' || !result.value.success)
+      .map(result => result.status === 'fulfilled' ? result.value.worker.name : 'Unknown worker');
+
+    const successCount = enabledWorkers.length - failures.length;
+
+    toastService.workerOperationResult(
+      operationName,
+      successCount,
+      enabledWorkers.length,
+      failures
+    );
+
+    setLoading(false);
+  };
+
   const handleInterruptWorkers = () => {
-    console.log('Interrupting workers...');
+    performWorkerOperation(
+      '/interrupt',
+      setInterruptLoading,
+      'Interrupt operation'
+    );
   };
 
   const handleClearMemory = () => {
-    console.log('Clearing memory...');
+    performWorkerOperation(
+      '/distributed/clear_memory',
+      setClearMemoryLoading,
+      'Clear memory operation'
+    );
   };
 
   return (
@@ -80,10 +150,10 @@ export function ExecutionPanel() {
             flex: 1
           }}
           onClick={handleInterruptWorkers}
-          disabled={!executionState.isExecuting}
+          disabled={interruptLoading || selectedWorkers.length === 0}
           className="distributed-button"
         >
-          Interrupt Workers
+          {interruptLoading ? 'Interrupting...' : 'Interrupt Workers'}
         </button>
 
         <button
@@ -93,9 +163,10 @@ export function ExecutionPanel() {
             flex: 1
           }}
           onClick={handleClearMemory}
+          disabled={clearMemoryLoading || selectedWorkers.length === 0}
           className="distributed-button"
         >
-          Clear Memory
+          {clearMemoryLoading ? 'Clearing...' : 'Clear Memory'}
         </button>
       </div>
 

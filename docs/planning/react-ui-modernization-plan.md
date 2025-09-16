@@ -1,14 +1,17 @@
 # React UI Modernization Project Plan
 
+> **📁 Supporting Documentation**: This is the master planning document. Detailed analysis and feature comparisons are available in [`/docs/planning/react-ui-modernization/`](react-ui-modernization/) directory.
+
 ## Overview
 Transform ComfyUI-Distributed's frontend from vanilla JavaScript to a modern React-based architecture, improving maintainability, developer experience, and user interface capabilities.
 
-## Current State
-- Legacy vanilla JavaScript codebase (11 files, ~200KB)
-- Mixed state management patterns
-- Manual DOM manipulation
-- Limited type safety
-- Ad-hoc styling approach
+## Current State Analysis
+- **Legacy codebase**: 11 vanilla JavaScript files (~200KB)
+- **React implementation**: 23% complete (16/70 features implemented)
+- **Status**: Basic UI functional, **core distributed functionality missing**
+- **Production readiness**: ❌ Not ready (see detailed analysis below)
+
+> **📊 Detailed Feature Analysis**: See [`react-ui-modernization/feature-comparison-matrix.md`](react-ui-modernization/feature-comparison-matrix.md) for comprehensive feature-by-feature comparison.
 
 ## Project Phases
 
@@ -98,64 +101,74 @@ Transform ComfyUI-Distributed's frontend from vanilla JavaScript to a modern Rea
 
 **Current State**: Basic worker management UI is functional but **many critical features missing** (see Feature Gap Analysis)
 
-### Phase 7: Critical Missing Features 🔄 IN PROGRESS
+### Phase 7: Feature Parity with Legacy UI 🔄 IN PROGRESS
+**Goal**: Achieve 100% functional parity with the existing legacy vanilla JavaScript UI
+
+**Core Parity Requirements (must match legacy exactly):**
+- **Worker Management**: Complete worker lifecycle (launch/stop/delete with PID tracking)
+- **Connection Management**: Add workers via connection strings (host:port, URLs)
+- **Execution Engine**: Distributed workflow execution with API interception
+- **Settings Panel**: Debug mode, auto-launch, timeout configuration
+- **Toast Notifications**: ComfyUI-integrated success/error feedback
+- **Logging System**: Worker log viewer with auto-refresh
+- **Advanced Operations**: Clear VRAM, Interrupt Workers buttons
+
+**Parity Tasks:**
+- [x] Basic ConnectionInput with validation *(completed)*
+- [ ] Complete worker addition workflow with connection testing
+- [ ] Execution engine with queue prompt interception
+- [ ] Worker log viewer modal (matching legacy behavior)
+- [ ] Settings panel with all legacy configuration options
+- [ ] Toast notification integration with ComfyUI system
+- [ ] Advanced worker operations (VRAM/interrupt)
+**Success Criteria**: React UI can perform every function that the legacy UI can perform, with identical behavior and user experience.
+
+### Phase 8: Automated Testing Suite 📝 PLANNED
+**Goal**: Implement comprehensive testing to verify feature parity and prevent regressions
+
 **Problems to Solve:**
-- **CONNECTION MANAGEMENT (0% complete)**: Cannot add or test worker connections
-- **EXECUTION ENGINE (0% complete)**: Distributed workflows non-functional - core product broken
-- **LOGGING SYSTEM (0% complete)**: Cannot debug issues or monitor performance
-- **SETTINGS PANEL (0% complete)**: Cannot configure extension behavior
-- **TOAST NOTIFICATIONS (0% complete)**: No user feedback for operations
+- Lack of automated verification that React UI matches legacy functionality
+- Risk of introducing bugs when implementing remaining parity features
+- Need for reliable way to test distributed functionality
+- Missing confidence in production readiness
 
-**Tasks:**
-- [ ] **CRITICAL**: Implement ConnectionInput with real-time validation and presets
-- [ ] **CRITICAL**: Build execution engine with API interception and parallel processing
-- [ ] **CRITICAL**: Create worker log viewer and monitoring system
-- [ ] **CRITICAL**: Add toast notification system for user feedback
-- [ ] **CRITICAL**: Implement settings panel with configuration persistence
+**Testing Tasks:**
+- [ ] Playwright end-to-end testing for parity verification
+- [ ] Unit test coverage for all components and services
+- [ ] Integration testing for worker management workflows
+- [ ] API endpoint testing for distributed functionality
+- [ ] Cross-browser compatibility testing
+- [ ] Performance regression testing
 
-**Priority**: These features are required for basic functionality. Current React UI is essentially non-functional without them.
+### Phase 9: Enhanced Features & Improvements 📝 PLANNED
+**Goal**: Add improvements beyond legacy UI capabilities
 
-### Phase 8: Advanced Worker Operations 📝 PLANNED
-**Problems to Solve:**
-- Missing advanced worker controls (Clear VRAM, Interrupt Workers)
-- No worker lifecycle management (PID tracking, timeouts)
-- Missing cloud worker support (Cloudflare, Runpod)
-- Incomplete status monitoring (adaptive polling, queue status)
+**Enhancement Categories:**
+- **User Experience**: Blueprint cards, improved loading states, keyboard navigation
+- **Performance**: System info caching, adaptive polling, optimized rendering
+- **Cloud Integration**: Enhanced cloud worker support, better connection handling
+- **Developer Experience**: Better error messages, debugging tools, type safety
 
-**Tasks:**
-- [ ] Add Clear Worker VRAM and Interrupt Workers buttons
-- [ ] Implement worker lifecycle management with PID tracking
-- [ ] Add cloud worker support for Cloudflare tunnel and Runpod
-- [ ] Enhance status monitoring with adaptive polling intervals
-- [ ] Implement worker launch timeout handling (90 seconds)
+**Enhancement Tasks:**
+- [ ] Blueprint placeholder and add worker cards for better empty states
+- [ ] Enhanced loading states and visual feedback improvements
+- [ ] Keyboard navigation and accessibility features
+- [ ] Auto-detection for master IP and worker types
+- [ ] System info caching and performance optimizations
+- [ ] Enhanced cloud worker support (Cloudflare, Runpod, etc.)
+- [ ] Improved error handling and user feedback
+- [ ] Developer debugging tools and enhanced logging
 
-### Phase 9: User Experience & Polish 📝 PLANNED
-**Problems to Solve:**
-- Missing blueprint/add worker cards for empty states
-- No keyboard navigation or accessibility features
-- Missing loading states and visual feedback
-- No auto-detection features (IP, worker types, CUDA devices)
+### Phase 10: Quality Assurance & Code Quality 📝 PLANNED
+**Goal**: Ensure production readiness and code quality standards
 
-**Tasks:**
-- [ ] Implement blueprint placeholder and add worker cards
-- [ ] Add keyboard navigation and accessibility support
-- [ ] Enhance loading states and button state management
-- [ ] Implement auto-detection for master IP and worker types
-- [ ] Add system info caching and performance optimizations
-
-### Phase 10: Quality Assurance & Testing 📝 PLANNED
-**Problems to Solve:**
-- No automated testing coverage
-- Missing code quality tools
-- No CI/CD pipeline
-- Potential performance issues
-
-**Tasks:**
-- [ ] Configure ESLint with React/TypeScript rules
-- [ ] Set up Prettier for consistent code formatting
-- [ ] Implement comprehensive test suite with coverage
-- [ ] Set up automated CI/CD pipeline
-- [ ] Conduct performance testing and optimization
+**Quality Assurance Tasks:**
+- [ ] Code quality improvements (ESLint, Prettier)
+- [ ] CI/CD pipeline setup
+- [ ] Performance testing and optimization
+- [ ] Accessibility compliance verification
+- [ ] Documentation updates and completion
+- [ ] Security review and best practices audit
 
 ### Phase 11: Legacy Cleanup & Migration Completion 📝 PLANNED
 **Problems to Solve:**
@@ -195,26 +208,37 @@ Transform ComfyUI-Distributed's frontend from vanilla JavaScript to a modern Rea
 
 ## Next Steps
 
-### ⚠️ CRITICAL SITUATION IDENTIFIED ⚠️
-**Current React UI Status: 23% Complete (16/70 features)**
+### 🎯 REFINED SCOPE: PARITY-FOCUSED APPROACH
 
-The comprehensive feature analysis reveals the React UI is missing **critical core functionality**:
+**Current Status: 23% Legacy Parity Complete**
 
-**IMMEDIATE PRIORITY - Phase 7: Critical Missing Features**
-1. **Connection Management (0% complete)** - Users cannot add workers
-2. **Execution Engine (0% complete)** - Distributed workflows completely non-functional
-3. **Logging System (0% complete)** - Cannot debug or monitor workers
-4. **Settings Panel (0% complete)** - Cannot configure extension
-5. **Toast Notifications (0% complete)** - No user feedback
+**IMMEDIATE PRIORITY - Phase 7: Feature Parity Only**
+Focus exclusively on matching legacy UI functionality:
 
-**Estimated Implementation Time**: 15-20 days for basic functionality
+1. **Worker Addition Workflow** - Complete connection testing and worker creation
+2. **Execution Engine** - Queue prompt interception for distributed workflows
+3. **Settings Panel** - Debug mode, auto-launch, timeout settings (legacy features only)
+4. **Worker Log Viewer** - Modal dialog with auto-refresh (matching legacy)
+5. **Toast Notifications** - ComfyUI integration for user feedback
+6. **Advanced Operations** - Clear VRAM, Interrupt Workers (legacy features)
+7. **Automated Testing** - Playwright suite to verify exact parity
 
-**Phase 8-11**: Additional features and polish (15-25 days)
+**Estimated Time for Parity**: 10-15 days
 
-### Feature Gap Documentation
-- **Detailed Analysis**: `/docs/planning/feature-comparison-matrix.md`
-- **Implementation Roadmap**: `/docs/planning/missing-features-analysis.md`
-- **Priority Rankings**: Critical → High → Medium → Low priority features
+**Post-Parity Enhancement** (Phase 8+): UI/UX improvements, performance optimizations, new features beyond legacy capabilities
+
+### 📋 Supporting Documentation
+- **📊 Feature Comparison Matrix**: [`react-ui-modernization/feature-comparison-matrix.md`](react-ui-modernization/feature-comparison-matrix.md)
+  - 70 features compared side-by-side
+  - Current completion: 23% (16/70 features)
+  - Status tracking by category
+
+- **🔍 Missing Features Analysis**: [`react-ui-modernization/missing-features-analysis.md`](react-ui-modernization/missing-features-analysis.md)
+  - Detailed implementation roadmap (30-45 days)
+  - Priority rankings: Critical → High → Medium → Low
+  - Risk assessment and mitigation strategies
+
+- **📁 Complete Documentation Index**: [`react-ui-modernization/README.md`](react-ui-modernization/README.md)
 
 ### Recommendation
 **The React UI should NOT be used in production** until Phase 7 critical features are implemented. The legacy UI should remain the primary interface until at least 80% feature parity is achieved.

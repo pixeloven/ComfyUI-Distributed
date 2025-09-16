@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Worker } from '@/types/worker';
 import { StatusDot } from './StatusDot';
+import { WorkerLogModal } from './WorkerLogModal';
 import { UI_COLORS } from '@/utils/constants';
 
 interface WorkerCardProps {
@@ -21,8 +22,8 @@ export const WorkerCard: React.FC<WorkerCardProps> = ({
   onSaveSettings
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
   const [editedWorker, setEditedWorker] = useState<Partial<Worker>>(worker);
+  const [showLogModal, setShowLogModal] = useState(false);
 
   const isRemote = worker.type === 'remote' || worker.type === 'cloud';
   const isCloud = worker.type === 'cloud';
@@ -55,21 +56,6 @@ export const WorkerCard: React.FC<WorkerCardProps> = ({
 
   const handleToggle = () => {
     onToggle?.(worker.id, !worker.enabled);
-  };
-
-  const handleSettingsToggle = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setIsExpanded(!isExpanded);
-  };
-
-  const handleSaveSettings = () => {
-    onSaveSettings?.(worker.id, editedWorker);
-    setIsEditing(false);
-  };
-
-  const handleCancelSettings = () => {
-    setEditedWorker(worker);
-    setIsEditing(false);
   };
 
   const infoText = getInfoText();
@@ -188,7 +174,7 @@ export const WorkerCard: React.FC<WorkerCardProps> = ({
                   }}
                   onClick={(e) => {
                     e.stopPropagation();
-                    // TODO: Show logs
+                    setShowLogModal(true);
                   }}
                   className="distributed-button"
                 >
@@ -197,177 +183,206 @@ export const WorkerCard: React.FC<WorkerCardProps> = ({
               </>
             )}
 
-            <button
+            {/* Dropdown arrow indicator */}
+            <span
               style={{
-                padding: '4px 8px',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                transition: 'all 0.2s',
                 fontSize: '12px',
-                fontWeight: '500',
-                backgroundColor: '#333'
+                color: '#888',
+                cursor: 'pointer',
+                transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)',
+                transition: 'transform 0.2s ease',
+                userSelect: 'none',
+                padding: '4px'
               }}
-              onClick={handleSettingsToggle}
-              className="distributed-button settings-btn"
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsExpanded(!isExpanded);
+              }}
             >
-              ⚙️
-            </button>
+              ▶
+            </span>
           </div>
         </div>
 
         {/* Settings Panel */}
-        <div className={`worker-settings ${isExpanded ? 'expanded' : ''}`}>
+        {isExpanded && (
           <div style={{
-            margin: '0 12px',
-            padding: '0 12px',
+            margin: '0 12px 12px 12px',
+            padding: '12px',
             background: UI_COLORS.BACKGROUND_DARKER,
             borderRadius: '4px',
             border: `1px solid ${UI_COLORS.BACKGROUND_DARK}`
           }}>
-            {isEditing ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                  <label style={{ fontSize: '12px', color: UI_COLORS.SECONDARY_TEXT, fontWeight: '500' }}>
-                    Name:
-                  </label>
-                  <input
-                    type="text"
-                    value={editedWorker.name || ''}
-                    onChange={(e) => setEditedWorker({ ...editedWorker, name: e.target.value })}
-                    style={{
-                      padding: '6px 10px',
-                      background: UI_COLORS.BACKGROUND_DARK,
-                      border: `1px solid ${UI_COLORS.BORDER_DARK}`,
-                      color: 'white',
-                      fontSize: '12px',
-                      borderRadius: '4px',
-                      transition: 'border-color 0.2s'
-                    }}
-                  />
-                </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '10px', alignItems: 'center' }}>
+              {/* Name */}
+              <label style={{ fontSize: '12px', color: '#ccc' }}>Name</label>
+              <input
+                type="text"
+                value={editedWorker.name || ''}
+                onChange={(e) => {
+                  setEditedWorker({ ...editedWorker, name: e.target.value });
+                  onSaveSettings?.(worker.id, { ...editedWorker, name: e.target.value });
+                }}
+                style={{
+                  padding: '4px 8px',
+                  background: '#222',
+                  border: '1px solid #333',
+                  color: '#ddd',
+                  fontSize: '12px',
+                  borderRadius: '3px',
+                  width: '150px'
+                }}
+              />
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                  <label style={{ fontSize: '12px', color: UI_COLORS.SECONDARY_TEXT, fontWeight: '500' }}>
-                    Host:
-                  </label>
-                  <input
-                    type="text"
-                    value={editedWorker.host || ''}
-                    onChange={(e) => setEditedWorker({ ...editedWorker, host: e.target.value })}
-                    style={{
-                      padding: '6px 10px',
-                      background: UI_COLORS.BACKGROUND_DARK,
-                      border: `1px solid ${UI_COLORS.BORDER_DARK}`,
-                      color: 'white',
-                      fontSize: '12px',
-                      borderRadius: '4px'
-                    }}
-                  />
-                </div>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                  <label style={{ fontSize: '12px', color: UI_COLORS.SECONDARY_TEXT, fontWeight: '500' }}>
-                    Port:
-                  </label>
-                  <input
-                    type="number"
-                    value={editedWorker.port || ''}
-                    onChange={(e) => setEditedWorker({ ...editedWorker, port: parseInt(e.target.value) || 0 })}
-                    style={{
-                      padding: '6px 10px',
-                      background: UI_COLORS.BACKGROUND_DARK,
-                      border: `1px solid ${UI_COLORS.BORDER_DARK}`,
-                      color: 'white',
-                      fontSize: '12px',
-                      borderRadius: '4px'
-                    }}
-                  />
-                </div>
-
-                <div style={{ display: 'flex', gap: '6px', marginTop: '10px' }}>
-                  <button
-                    onClick={handleSaveSettings}
-                    style={{
-                      padding: '4px 14px',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '4px',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s',
-                      fontSize: '12px',
-                      fontWeight: '500',
-                      backgroundColor: '#4a7c4a',
-                      flex: '1'
-                    }}
-                    className="distributed-button"
-                  >
-                    Save
-                  </button>
-                  <button
-                    onClick={handleCancelSettings}
-                    style={{
-                      padding: '4px 14px',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '4px',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s',
-                      fontSize: '12px',
-                      fontWeight: '500',
-                      backgroundColor: '#555',
-                      flex: '1'
-                    }}
-                    className="distributed-button"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div style={{ display: 'flex', gap: '6px', alignItems: 'stretch', width: '100%' }}>
-                <button
-                  onClick={() => setIsEditing(true)}
-                  style={{
-                    padding: '4px 14px',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '4px',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s',
-                    fontSize: '12px',
-                    fontWeight: '500',
-                    backgroundColor: '#333',
-                    flex: '1'
+              {/* Connection */}
+              <label style={{ fontSize: '12px', color: '#ccc' }}>Connection</label>
+              <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                <input
+                  type="text"
+                  value={editedWorker.connection || ''}
+                  onChange={(e) => {
+                    setEditedWorker({ ...editedWorker, connection: e.target.value });
+                    onSaveSettings?.(worker.id, { ...editedWorker, connection: e.target.value });
                   }}
-                  className="distributed-button"
-                >
-                  Edit
-                </button>
-                <button
-                  onClick={() => onDelete?.(worker.id)}
                   style={{
-                    padding: '4px 14px',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '4px',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s',
+                    padding: '4px 8px',
+                    background: '#222',
+                    border: '1px solid #333',
+                    color: '#ddd',
                     fontSize: '12px',
-                    fontWeight: '500',
-                    backgroundColor: '#7c4a4a',
-                    flex: '1'
+                    borderRadius: '3px',
+                    width: '120px'
                   }}
-                  className="distributed-button"
+                  placeholder="host:port or URL"
+                />
+                <button
+                  style={{
+                    padding: '4px 8px',
+                    background: '#4a7c4a',
+                    border: 'none',
+                    color: '#fff',
+                    fontSize: '10px',
+                    borderRadius: '3px',
+                    cursor: 'pointer'
+                  }}
+                  onClick={() => {
+                    // TODO: Implement connection test
+                    console.log('Testing connection to:', editedWorker.connection);
+                  }}
                 >
-                  Delete
+                  Test
                 </button>
               </div>
-            )}
+
+              {/* Worker Type */}
+              <label style={{ fontSize: '12px', color: '#ccc' }}>Worker Type</label>
+              <select
+                value={editedWorker.type || 'local'}
+                onChange={(e) => {
+                  setEditedWorker({ ...editedWorker, type: e.target.value as any });
+                  onSaveSettings?.(worker.id, { ...editedWorker, type: e.target.value as any });
+                }}
+                style={{
+                  padding: '4px 8px',
+                  background: '#222',
+                  border: '1px solid #333',
+                  color: '#ddd',
+                  fontSize: '12px',
+                  borderRadius: '3px',
+                  width: '100px'
+                }}
+              >
+                <option value="local">Local</option>
+                <option value="remote">Remote</option>
+                <option value="cloud">Cloud</option>
+              </select>
+
+              {/* CUDA Device */}
+              <label style={{ fontSize: '12px', color: '#ccc' }}>CUDA Device</label>
+              <input
+                type="number"
+                value={editedWorker.cuda_device ?? ''}
+                onChange={(e) => {
+                  const value = e.target.value === '' ? undefined : parseInt(e.target.value);
+                  setEditedWorker({ ...editedWorker, cuda_device: value });
+                  onSaveSettings?.(worker.id, { ...editedWorker, cuda_device: value });
+                }}
+                style={{
+                  padding: '4px 8px',
+                  background: '#222',
+                  border: '1px solid #333',
+                  color: '#ddd',
+                  fontSize: '12px',
+                  borderRadius: '3px',
+                  width: '60px'
+                }}
+                min="0"
+                placeholder="auto"
+              />
+
+              {/* Extra Args */}
+              <label style={{ fontSize: '12px', color: '#ccc' }}>Extra Args</label>
+              <input
+                type="text"
+                value={editedWorker.extra_args || ''}
+                onChange={(e) => {
+                  setEditedWorker({ ...editedWorker, extra_args: e.target.value });
+                  onSaveSettings?.(worker.id, { ...editedWorker, extra_args: e.target.value });
+                }}
+                style={{
+                  padding: '4px 8px',
+                  background: '#222',
+                  border: '1px solid #333',
+                  color: '#ddd',
+                  fontSize: '12px',
+                  borderRadius: '3px',
+                  width: '150px'
+                }}
+                placeholder="--listen --port 8190"
+              />
+            </div>
           </div>
-        </div>
+        )}
+
+        {/* Delete Button (when expanded) */}
+        {isExpanded && (
+          <div style={{ margin: '0 12px 12px 12px' }}>
+            <div style={{
+              padding: '8px 12px',
+              borderTop: '1px solid #444',
+              display: 'flex',
+              justifyContent: 'center'
+            }}>
+              <button
+                onClick={() => onDelete?.(worker.id)}
+                style={{
+                  padding: '4px 14px',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  fontSize: '12px',
+                  fontWeight: '500',
+                  backgroundColor: '#7c4a4a',
+                  flex: '1'
+                }}
+                className="distributed-button"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        )}
       </div>
+
+      {/* Worker Log Modal */}
+      <WorkerLogModal
+        isOpen={showLogModal}
+        workerId={worker.id}
+        workerName={worker.name}
+        onClose={() => setShowLogModal(false)}
+      />
     </div>
   );
 };

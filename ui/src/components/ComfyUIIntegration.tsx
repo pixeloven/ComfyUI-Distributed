@@ -2,6 +2,7 @@ import React, { useRef, useEffect } from 'react';
 import ReactDOM from 'react-dom/client';
 import App from '../App';
 import { PULSE_ANIMATION_CSS } from '@/utils/constants';
+import { ExecutionService } from '@/services/executionService';
 
 declare global {
   interface Window {
@@ -12,8 +13,10 @@ declare global {
 export class ComfyUIDistributedExtension {
   private reactRoot: any = null;
   private statusCheckInterval: number | null = null;
+  private executionService: ExecutionService;
 
   constructor() {
+    this.executionService = ExecutionService.getInstance();
     this.injectStyles();
     this.loadConfig().then(() => {
       this.registerSidebarTab();
@@ -93,6 +96,11 @@ export class ComfyUIDistributedExtension {
     }
   }
 
+  public destroy() {
+    this.onPanelClose();
+    this.executionService.destroy();
+  }
+
   private startStatusChecking() {
     if (this.statusCheckInterval) return;
 
@@ -109,8 +117,8 @@ export class ComfyUIDistributedExtension {
   }
 
   private setupInterceptor() {
-    // This would integrate with ComfyUI's queue system
-    // For now, we'll just log that it's set up
+    // Initialize the execution service which sets up the queue prompt interceptor
+    this.executionService.initialize();
     console.log('Distributed execution interceptor set up');
   }
 
