@@ -1,2 +1,3 @@
-- [ ] Adopt features from other dist projects
+- [ ] Restructure and modernize to use react based on the following https://github.com/pixeloven/ComfyUI-React-Extension-Template
+- [ ] Adopt features from other dist projects. Review https://github.com/city96/ComfyUI_NetDist https://github.com/pollockjj/ComfyUI-MultiGPU
 - [ ] File sync feature for managing other nodes

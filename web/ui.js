@@ -690,7 +690,7 @@ export class DistributedUI {
         connectionLabel.style.cssText = "font-size: 12px; color: #ccc;";
 
         // Generate connection string from worker data
-        let currentConnection = worker.connection || this.generateConnectionString(worker);
+        let currentConnection = worker.connection || extension.generateConnectionString(worker);
 
         const connectionInput = new ConnectionInput({
             onValidation: (result) => {
@@ -771,7 +771,7 @@ export class DistributedUI {
         });
 
         // Set current type
-        const currentType = worker.type || this.detectWorkerType(worker);
+        const currentType = worker.type || extension.detectWorkerType(worker);
         typeSelect.value = currentType;
 
         // Handle manual type override
@@ -830,36 +830,6 @@ export class DistributedUI {
         return form;
     }
 
-    generateConnectionString(worker) {
-        if (!worker.host || !worker.port) {
-            return 'localhost:8189';
-        }
-
-        const host = worker.host;
-        const port = worker.port;
-        const isSecure = worker.type === 'cloud' || port === 443;
-
-        if (isSecure) {
-            return port === 443 ? `https://${host}` : `https://${host}:${port}`;
-        } else {
-            return port === 80 ? `http://${host}` : `${host}:${port}`;
-        }
-    }
-
-    detectWorkerType(worker) {
-        if (worker.type) return worker.type;
-
-        const host = worker.host || 'localhost';
-        const port = worker.port || 8189;
-
-        if (host === 'localhost' || host === '127.0.0.1') {
-            return 'local';
-        } else if (port === 443 || host.includes('trycloudflare.com') || host.includes('ngrok.io')) {
-            return 'cloud';
-        } else {
-            return 'remote';
-        }
-    }
 
     updateWorkerTypeFields(workerId, workerType) {
         const cudaGroup = document.getElementById(`cuda-group-${workerId}`);
