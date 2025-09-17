@@ -64,7 +64,7 @@ export class ApiClient {
         const response = await fetch(`${this.baseUrl}${endpoint}`, {
           headers: { 'Content-Type': 'application/json' },
           signal: controller.signal,
-          ...options
+          ...options,
         });
 
         clearTimeout(timeoutId);
@@ -77,7 +77,9 @@ export class ApiClient {
         return await response.json();
       } catch (error) {
         lastError = error as Error;
-        console.log(`API Error (attempt ${attempt + 1}/${retries}): ${endpoint} - ${lastError.message}`);
+        console.log(
+          `API Error (attempt ${attempt + 1}/${retries}): ${endpoint} - ${lastError.message}`
+        );
         if (attempt < retries - 1) {
           await new Promise(resolve => setTimeout(resolve, delay));
           delay *= 2;
@@ -95,28 +97,28 @@ export class ApiClient {
   async updateWorker(workerId: string, data: any): Promise<ApiResponse> {
     return this.request<ApiResponse>('/distributed/config/update_worker', {
       method: 'POST',
-      body: JSON.stringify({ worker_id: workerId, ...data })
+      body: JSON.stringify({ worker_id: workerId, ...data }),
     });
   }
 
   async deleteWorker(workerId: string): Promise<ApiResponse> {
     return this.request<ApiResponse>('/distributed/config/delete_worker', {
       method: 'POST',
-      body: JSON.stringify({ worker_id: workerId })
+      body: JSON.stringify({ worker_id: workerId }),
     });
   }
 
   async updateSetting(key: string, value: any): Promise<ApiResponse> {
     return this.request<ApiResponse>('/distributed/config/update_setting', {
       method: 'POST',
-      body: JSON.stringify({ key, value })
+      body: JSON.stringify({ key, value }),
     });
   }
 
   async updateMaster(data: any): Promise<ApiResponse> {
     return this.request<ApiResponse>('/distributed/config/update_master', {
       method: 'POST',
-      body: JSON.stringify(data)
+      body: JSON.stringify(data),
     });
   }
 
@@ -125,14 +127,14 @@ export class ApiClient {
     return this.request<ApiResponse>('/distributed/launch_worker', {
       method: 'POST',
       body: JSON.stringify({ worker_id: workerId }),
-      timeout: TIMEOUTS.LAUNCH
+      timeout: TIMEOUTS.LAUNCH,
     });
   }
 
   async stopWorker(workerId: string): Promise<ApiResponse> {
     return this.request<ApiResponse>('/distributed/stop_worker', {
       method: 'POST',
-      body: JSON.stringify({ worker_id: workerId })
+      body: JSON.stringify({ worker_id: workerId }),
     });
   }
 
@@ -147,7 +149,7 @@ export class ApiClient {
   async clearLaunchingFlag(workerId: string): Promise<ApiResponse> {
     return this.request<ApiResponse>('/distributed/worker/clear_launching', {
       method: 'POST',
-      body: JSON.stringify({ worker_id: workerId })
+      body: JSON.stringify({ worker_id: workerId }),
     });
   }
 
@@ -155,7 +157,7 @@ export class ApiClient {
   async prepareJob(multiJobId: string): Promise<ApiResponse> {
     return this.request<ApiResponse>('/distributed/prepare_job', {
       method: 'POST',
-      body: JSON.stringify({ multi_job_id: multiJobId })
+      body: JSON.stringify({ multi_job_id: multiJobId }),
     });
   }
 
@@ -163,7 +165,7 @@ export class ApiClient {
   async loadImage(imagePath: string): Promise<any> {
     return this.request('/distributed/load_image', {
       method: 'POST',
-      body: JSON.stringify({ image_path: imagePath })
+      body: JSON.stringify({ image_path: imagePath }),
     });
   }
 
@@ -173,14 +175,18 @@ export class ApiClient {
   }
 
   // Connection testing
-  async validateConnection(connection: string, testConnectivity: boolean = true, timeout: number = 10): Promise<any> {
+  async validateConnection(
+    connection: string,
+    testConnectivity: boolean = true,
+    timeout: number = 10
+  ): Promise<any> {
     return this.request('/distributed/validate_connection', {
       method: 'POST',
       body: JSON.stringify({
         connection,
         test_connectivity: testConnectivity,
-        timeout
-      })
+        timeout,
+      }),
     });
   }
 
@@ -193,7 +199,7 @@ export class ApiClient {
       const response = await fetch(url, {
         method: 'GET',
         mode: 'cors',
-        signal: controller.signal
+        signal: controller.signal,
       });
       clearTimeout(timeoutId);
 
@@ -207,9 +213,7 @@ export class ApiClient {
 
   // Batch status checking
   async checkMultipleStatuses(urls: string[]): Promise<PromiseSettledResult<StatusResponse>[]> {
-    return Promise.allSettled(
-      urls.map(url => this.checkStatus(url))
-    );
+    return Promise.allSettled(urls.map(url => this.checkStatus(url)));
   }
 }
 

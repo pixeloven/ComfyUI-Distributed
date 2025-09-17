@@ -18,7 +18,9 @@ export function ExecutionPanel() {
     styleString.split(';').forEach(rule => {
       const [property, value] = rule.split(':').map(s => s.trim());
       if (property && value) {
-        const camelCaseProperty = property.replace(/-([a-z])/g, (_, letter) => letter.toUpperCase());
+        const camelCaseProperty = property.replace(/-([a-z])/g, (_, letter) =>
+          letter.toUpperCase()
+        );
         (style as any)[camelCaseProperty] = value;
       }
     });
@@ -42,7 +44,7 @@ export function ExecutionPanel() {
     setLoading(true);
 
     const results = await Promise.allSettled(
-      enabledWorkers.map(async (worker) => {
+      enabledWorkers.map(async worker => {
         const workerUrl = worker.connection || `http://${worker.host}:${worker.port}`;
         const url = `${workerUrl}${endpoint}`;
 
@@ -51,7 +53,7 @@ export function ExecutionPanel() {
             method: 'POST',
             mode: 'cors',
             headers: { 'Content-Type': 'application/json' },
-            signal: AbortSignal.timeout(10000) // 10 second timeout
+            signal: AbortSignal.timeout(10000), // 10 second timeout
           });
 
           if (!response.ok) {
@@ -69,7 +71,7 @@ export function ExecutionPanel() {
 
     const failures = results
       .filter(result => result.status === 'rejected' || !result.value.success)
-      .map(result => result.status === 'fulfilled' ? result.value.worker.name : 'Unknown worker');
+      .map(result => (result.status === 'fulfilled' ? result.value.worker.name : 'Unknown worker'));
 
     const successCount = enabledWorkers.length - failures.length;
 
@@ -84,11 +86,7 @@ export function ExecutionPanel() {
   };
 
   const handleInterruptWorkers = () => {
-    performWorkerOperation(
-      '/interrupt',
-      setInterruptLoading,
-      'Interrupt operation'
-    );
+    performWorkerOperation('/interrupt', setInterruptLoading, 'Interrupt operation');
   };
 
   const handleClearMemory = () => {
@@ -105,9 +103,7 @@ export function ExecutionPanel() {
 
       {/* Status Info */}
       <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
-        <div style={parseStyle(UI_STYLES.infoBox)}>
-          Workers Online: {selectedWorkers.length}
-        </div>
+        <div style={parseStyle(UI_STYLES.infoBox)}>Workers Online: {selectedWorkers.length}</div>
 
         {executionState.isExecuting && (
           <div style={parseStyle(UI_STYLES.infoBox)}>
@@ -124,20 +120,24 @@ export function ExecutionPanel() {
 
       {/* Progress Bar */}
       {executionState.isExecuting && (
-        <div style={{
-          width: '100%',
-          height: '6px',
-          backgroundColor: '#333',
-          borderRadius: '3px',
-          marginBottom: '12px',
-          overflow: 'hidden'
-        }}>
-          <div style={{
-            width: `${executionState.progress}%`,
-            height: '100%',
-            backgroundColor: '#4a7c4a',
-            transition: 'width 0.3s ease'
-          }} />
+        <div
+          style={{
+            width: '100%',
+            height: '6px',
+            backgroundColor: '#333',
+            borderRadius: '3px',
+            marginBottom: '12px',
+            overflow: 'hidden',
+          }}
+        >
+          <div
+            style={{
+              width: `${executionState.progress}%`,
+              height: '100%',
+              backgroundColor: '#4a7c4a',
+              transition: 'width 0.3s ease',
+            }}
+          />
         </div>
       )}
 
@@ -147,11 +147,11 @@ export function ExecutionPanel() {
           style={{
             ...parseStyle(BUTTON_STYLES.base),
             ...parseStyle(BUTTON_STYLES.interrupt),
-            flex: 1
+            flex: 1,
           }}
           onClick={handleInterruptWorkers}
           disabled={interruptLoading || selectedWorkers.length === 0}
-          className="distributed-button"
+          className='distributed-button'
         >
           {interruptLoading ? 'Interrupting...' : 'Interrupt Workers'}
         </button>
@@ -160,11 +160,11 @@ export function ExecutionPanel() {
           style={{
             ...parseStyle(BUTTON_STYLES.base),
             ...parseStyle(BUTTON_STYLES.clearMemory),
-            flex: 1
+            flex: 1,
           }}
           onClick={handleClearMemory}
           disabled={clearMemoryLoading || selectedWorkers.length === 0}
-          className="distributed-button"
+          className='distributed-button'
         >
           {clearMemoryLoading ? 'Clearing...' : 'Clear Memory'}
         </button>
@@ -172,18 +172,22 @@ export function ExecutionPanel() {
 
       {/* Execution Errors */}
       {executionState.errors.length > 0 && (
-        <div style={{
-          marginTop: '12px',
-          padding: '8px',
-          backgroundColor: '#7c4a4a',
-          borderRadius: '4px'
-        }}>
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: '8px'
-          }}>
+        <div
+          style={{
+            marginTop: '12px',
+            padding: '8px',
+            backgroundColor: '#7c4a4a',
+            borderRadius: '4px',
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '8px',
+            }}
+          >
             <strong style={{ color: '#fff', fontSize: '12px' }}>
               Execution Errors ({executionState.errors.length})
             </strong>
@@ -193,21 +197,23 @@ export function ExecutionPanel() {
                 backgroundColor: 'transparent',
                 border: '1px solid #999',
                 padding: '2px 8px',
-                fontSize: '10px'
+                fontSize: '10px',
               }}
               onClick={clearExecutionErrors}
-              className="distributed-button"
+              className='distributed-button'
             >
               Clear
             </button>
           </div>
 
-          <div style={{
-            maxHeight: '120px',
-            overflowY: 'auto',
-            fontSize: '11px',
-            color: '#fff'
-          }}>
+          <div
+            style={{
+              maxHeight: '120px',
+              overflowY: 'auto',
+              fontSize: '11px',
+              color: '#fff',
+            }}
+          >
             {executionState.errors.map((error, index) => (
               <div key={index} style={{ marginBottom: '4px' }}>
                 {error}
@@ -219,15 +225,17 @@ export function ExecutionPanel() {
 
       {/* Worker Status Warning */}
       {selectedWorkers.length === 0 && (
-        <div style={{
-          marginTop: '12px',
-          padding: '8px',
-          backgroundColor: '#685434',
-          borderRadius: '4px',
-          color: '#fff',
-          fontSize: '12px',
-          textAlign: 'center'
-        }}>
+        <div
+          style={{
+            marginTop: '12px',
+            padding: '8px',
+            backgroundColor: '#685434',
+            borderRadius: '4px',
+            color: '#fff',
+            fontSize: '12px',
+            textAlign: 'center',
+          }}
+        >
           No workers are online and selected for distributed processing
         </div>
       )}

@@ -21,7 +21,7 @@ interface AddWorkerDialogProps {
 export const AddWorkerDialog: React.FC<AddWorkerDialogProps> = ({
   isOpen,
   onClose,
-  onAddWorker
+  onAddWorker,
 }) => {
   const [connection, setConnection] = useState('');
   const [name, setName] = useState('');
@@ -39,9 +39,12 @@ export const AddWorkerDialog: React.FC<AddWorkerDialogProps> = ({
     if (value.trim()) {
       const parsed = connectionService.parseConnectionString(value);
       if (parsed) {
-        const baseName = parsed.type === 'local' ? 'Local Worker' :
-                        parsed.type === 'cloud' ? 'Cloud Worker' :
-                        'Remote Worker';
+        const baseName =
+          parsed.type === 'local'
+            ? 'Local Worker'
+            : parsed.type === 'cloud'
+              ? 'Cloud Worker'
+              : 'Remote Worker';
         setName(`${baseName} (${parsed.host}:${parsed.port})`);
       }
     }
@@ -70,7 +73,7 @@ export const AddWorkerDialog: React.FC<AddWorkerDialogProps> = ({
       port: parsed.port,
       type: parsed.type,
       cuda_device: cudaDevice,
-      extra_args: extraArgs.trim() || undefined
+      extra_args: extraArgs.trim() || undefined,
     });
 
     // Reset form
@@ -96,21 +99,22 @@ export const AddWorkerDialog: React.FC<AddWorkerDialogProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="add-worker-dialog-overlay" onClick={handleCancel}>
-      <div className="add-worker-dialog" onClick={(e) => e.stopPropagation()}>
-        <div className="add-worker-dialog-header">
+    <div className='add-worker-dialog-overlay' onClick={handleCancel}>
+      <div className='add-worker-dialog' onClick={e => e.stopPropagation()}>
+        <div className='add-worker-dialog-header'>
           <h3>Add New Worker</h3>
-          <button className="add-worker-dialog-close" onClick={handleCancel}>
+          <button className='add-worker-dialog-close' onClick={handleCancel}>
             ×
           </button>
         </div>
 
-        <div className="add-worker-dialog-content">
-          <div className="add-worker-form-group">
-            <label>Connection</label>
+        <div className='add-worker-dialog-content'>
+          <div className='add-worker-form-group'>
+            <label htmlFor="connection-input">Connection</label>
             <ConnectionInput
+              id="connection-input"
               value={connection}
-              placeholder="localhost:8189, https://host:port, or cloud URL"
+              placeholder='localhost:8189, https://host:port, or cloud URL'
               showPresets={true}
               showTestButton={true}
               validateOnInput={true}
@@ -120,53 +124,53 @@ export const AddWorkerDialog: React.FC<AddWorkerDialogProps> = ({
             />
           </div>
 
-          <div className="add-worker-form-group">
-            <label>Worker Name</label>
+          <div className='add-worker-form-group'>
+            <label htmlFor="worker-name">Worker Name</label>
             <input
-              type="text"
+              id="worker-name"
+              type='text'
               value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Enter worker name"
-              className="add-worker-input"
+              onChange={e => setName(e.target.value)}
+              placeholder='Enter worker name'
+              className='add-worker-input'
             />
           </div>
 
-          <div className="add-worker-form-row">
-            <div className="add-worker-form-group">
-              <label>CUDA Device</label>
+          <div className='add-worker-form-row'>
+            <div className='add-worker-form-group'>
+              <label htmlFor="cuda-device">CUDA Device</label>
               <input
-                type="number"
+                id="cuda-device"
+                type='number'
                 value={cudaDevice}
-                onChange={(e) => setCudaDevice(parseInt(e.target.value) || 0)}
-                min="0"
-                max="7"
-                className="add-worker-input"
+                onChange={e => setCudaDevice(parseInt(e.target.value) || 0)}
+                min='0'
+                max='7'
+                className='add-worker-input'
               />
             </div>
 
-            <div className="add-worker-form-group">
-              <label>Extra Arguments (Local workers only)</label>
+            <div className='add-worker-form-group'>
+              <label htmlFor="extra-args">Extra Arguments (Local workers only)</label>
               <input
-                type="text"
+                id="extra-args"
+                type='text'
                 value={extraArgs}
-                onChange={(e) => setExtraArgs(e.target.value)}
-                placeholder="--cpu --preview-method auto"
-                className="add-worker-input"
+                onChange={e => setExtraArgs(e.target.value)}
+                placeholder='--cpu --preview-method auto'
+                className='add-worker-input'
                 disabled={validationResult?.details?.type !== 'local'}
               />
             </div>
           </div>
         </div>
 
-        <div className="add-worker-dialog-footer">
-          <button
-            className="add-worker-button add-worker-button--secondary"
-            onClick={handleCancel}
-          >
+        <div className='add-worker-dialog-footer'>
+          <button className='add-worker-button add-worker-button--secondary' onClick={handleCancel}>
             Cancel
           </button>
           <button
-            className="add-worker-button add-worker-button--primary"
+            className='add-worker-button add-worker-button--primary'
             onClick={handleSubmit}
             disabled={!isValid || !connection.trim() || !name.trim()}
           >

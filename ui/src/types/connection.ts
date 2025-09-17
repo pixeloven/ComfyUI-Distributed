@@ -42,6 +42,7 @@ export interface ConnectionInputProps {
   validateOnInput?: boolean;
   debounceMs?: number;
   disabled?: boolean;
+  id?: string;
   onChange?: (value: string) => void;
   onValidation?: (result: ConnectionValidationResult) => void;
   onConnectionTest?: (result: ConnectionValidationResult) => void;

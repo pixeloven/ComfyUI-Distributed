@@ -4,19 +4,19 @@ import App from '../../App';
 // Mock the child components
 jest.mock('../../components/WorkerManagementPanel', () => {
   return function WorkerManagementPanel() {
-    return <div data-testid="worker-management-panel">Worker Management Panel</div>;
+    return <div data-testid='worker-management-panel'>Worker Management Panel</div>;
   };
 });
 
 jest.mock('../../components/ConnectionInput', () => {
   return function ConnectionInput() {
-    return <div data-testid="connection-input">Connection Input</div>;
+    return <div data-testid='connection-input'>Connection Input</div>;
   };
 });
 
 jest.mock('../../components/ExecutionPanel', () => {
   return function ExecutionPanel() {
-    return <div data-testid="execution-panel">Execution Panel</div>;
+    return <div data-testid='execution-panel'>Execution Panel</div>;
   };
 });
 

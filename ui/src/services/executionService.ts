@@ -85,8 +85,10 @@ export class ExecutionService {
     // Replace with our interceptor
     comfyAPI.queuePrompt = async (number: number, prompt: WorkflowData) => {
       if (this.isEnabled) {
-        const hasCollector = this.findNodesByClass(prompt.output, "DistributedCollector").length > 0;
-        const hasDistUpscale = this.findNodesByClass(prompt.output, "UltimateSDUpscaleDistributed").length > 0;
+        const hasCollector =
+          this.findNodesByClass(prompt.output, 'DistributedCollector').length > 0;
+        const hasDistUpscale =
+          this.findNodesByClass(prompt.output, 'UltimateSDUpscaleDistributed').length > 0;
 
         if (hasCollector || hasDistUpscale) {
           console.log('Distributed nodes detected - executing parallel distributed workflow');
@@ -123,32 +125,40 @@ export class ExecutionService {
    */
   private async executeParallelDistributed(promptWrapper: WorkflowData): Promise<any> {
     try {
-      const executionPrefix = "exec_" + Date.now();
+      const executionPrefix = 'exec_' + Date.now();
 
       // Get enabled workers from API
       const config = await this.apiClient.getConfig();
-      const enabledWorkers = config.workers ?
-        Object.values(config.workers).filter((w: any) => w.enabled) : [];
+      const enabledWorkers = config.workers
+        ? Object.values(config.workers).filter((w: any) => w.enabled)
+        : [];
 
       // Pre-flight health check
       const activeWorkers = await this.performPreflightCheck(enabledWorkers);
 
       if (activeWorkers.length === 0 && enabledWorkers.length > 0) {
-        console.log("No active workers found. All enabled workers are offline.");
+        console.log('No active workers found. All enabled workers are offline.');
         // TODO: Show toast notification
         // Fall back to master-only execution
         return this.originalQueuePrompt(0, promptWrapper);
       }
 
-      console.log(`Pre-flight check: ${activeWorkers.length} of ${enabledWorkers.length} workers are active`);
+      console.log(
+        `Pre-flight check: ${activeWorkers.length} of ${enabledWorkers.length} workers are active`
+      );
 
       // Find all distributed nodes
-      const collectorNodes = this.findNodesByClass(promptWrapper.output, "DistributedCollector");
-      const upscaleNodes = this.findNodesByClass(promptWrapper.output, "UltimateSDUpscaleDistributed");
+      const collectorNodes = this.findNodesByClass(promptWrapper.output, 'DistributedCollector');
+      const upscaleNodes = this.findNodesByClass(
+        promptWrapper.output,
+        'UltimateSDUpscaleDistributed'
+      );
       const allDistributedNodes = [...collectorNodes, ...upscaleNodes];
 
       // Map original node IDs to unique job IDs
-      const job_id_map = new Map(allDistributedNodes.map(node => [node.id, `${executionPrefix}_${node.id}`]));
+      const job_id_map = new Map(
+        allDistributedNodes.map(node => [node.id, `${executionPrefix}_${node.id}`])
+      );
 
       // Prepare distributed jobs
       const preparePromises = Array.from(job_id_map.values()).map(uniqueId =>
@@ -164,17 +174,19 @@ export class ExecutionService {
         const options: ExecutionOptions = {
           enabled_worker_ids: activeWorkers.map((w: any) => w.id),
           workflow: promptWrapper.workflow,
-          job_id_map: job_id_map
+          job_id_map: job_id_map,
         };
 
         const jobApiPrompt = await this.prepareApiPromptForParticipant(
-          promptWrapper.output, participantId, options
+          promptWrapper.output,
+          participantId,
+          options
         );
 
         if (participantId === 'master') {
           jobs.push({
             type: 'master',
-            promptWrapper: { ...promptWrapper, output: jobApiPrompt }
+            promptWrapper: { ...promptWrapper, output: jobApiPrompt },
           });
         } else {
           const worker = activeWorkers.find((w: any) => w.id === participantId);
@@ -183,7 +195,7 @@ export class ExecutionService {
               type: 'worker',
               worker,
               prompt: jobApiPrompt,
-              workflow: promptWrapper.workflow
+              workflow: promptWrapper.workflow,
             });
           }
         }
@@ -191,9 +203,8 @@ export class ExecutionService {
 
       const result = await this.executeJobs(jobs);
       return result;
-
     } catch (error) {
-      console.error("Parallel execution failed:", error);
+      console.error('Parallel execution failed:', error);
       throw error;
     }
   }
@@ -206,12 +217,12 @@ export class ExecutionService {
     participantId: string,
     options: ExecutionOptions
   ): Promise<any> {
-    let jobApiPrompt = JSON.parse(JSON.stringify(baseApiPrompt));
+    const jobApiPrompt = JSON.parse(JSON.stringify(baseApiPrompt));
     const isMaster = participantId === 'master';
 
     // Find all distributed nodes
-    const collectorNodes = this.findNodesByClass(jobApiPrompt, "DistributedCollector");
-    const upscaleNodes = this.findNodesByClass(jobApiPrompt, "UltimateSDUpscaleDistributed");
+    const collectorNodes = this.findNodesByClass(jobApiPrompt, 'DistributedCollector');
+    const upscaleNodes = this.findNodesByClass(jobApiPrompt, 'UltimateSDUpscaleDistributed');
 
     // Handle Distributed collector nodes
     for (const collector of collectorNodes) {
@@ -261,10 +272,10 @@ export class ExecutionService {
       await fetch('/distributed/prepare_job', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ multi_job_id })
+        body: JSON.stringify({ multi_job_id }),
       });
     } catch (error) {
-      console.error("Error preparing job:", error);
+      console.error('Error preparing job:', error);
       throw error;
     }
   }
@@ -288,7 +299,7 @@ export class ExecutionService {
 
     await Promise.all(promises);
 
-    return masterPromptId || { "prompt_id": "distributed-job-dispatched" };
+    return masterPromptId || { prompt_id: 'distributed-job-dispatched' };
   }
 
   /**
@@ -302,7 +313,7 @@ export class ExecutionService {
     const promptToSend = {
       prompt,
       extra_data: { extra_pnginfo: { workflow } },
-      client_id: (window as any).app?.api?.clientId || 'distributed-client'
+      client_id: (window as any).app?.api?.clientId || 'distributed-client',
     };
 
     try {
@@ -310,7 +321,7 @@ export class ExecutionService {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         mode: 'cors',
-        body: JSON.stringify(promptToSend)
+        body: JSON.stringify(promptToSend),
       });
 
       console.log(`Successfully dispatched job to worker ${worker.name}`);
@@ -336,7 +347,7 @@ export class ExecutionService {
         const response = await fetch(checkUrl, {
           method: 'GET',
           mode: 'cors',
-          signal: AbortSignal.timeout(5000) // 5 second timeout
+          signal: AbortSignal.timeout(5000), // 5 second timeout
         });
 
         if (response.ok) {
@@ -356,7 +367,9 @@ export class ExecutionService {
     const activeWorkers = results.filter(r => r.active).map(r => r.worker);
 
     const elapsed = Date.now() - startTime;
-    console.log(`Pre-flight check completed in ${elapsed}ms. Active workers: ${activeWorkers.length}/${workers.length}`);
+    console.log(
+      `Pre-flight check completed in ${elapsed}ms. Active workers: ${activeWorkers.length}/${workers.length}`
+    );
 
     return activeWorkers;
   }

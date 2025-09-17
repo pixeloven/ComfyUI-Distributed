@@ -17,20 +17,20 @@ function App() {
         const configResponse = await apiClient.getConfig();
         const config = {
           master: configResponse.master,
-          workers: configResponse.workers ? Object.values(configResponse.workers) : []
+          workers: configResponse.workers ? Object.values(configResponse.workers) : [],
         };
         setConfig(config);
 
         // Set initial connection state
         setConnectionState({
           isConnected: true,
-          masterIP: window.location.hostname
+          masterIP: window.location.hostname,
         });
       } catch (error) {
         console.error('Failed to initialize app:', error);
         setConnectionState({
           isConnected: false,
-          connectionError: error instanceof Error ? error.message : 'Unknown error'
+          connectionError: error instanceof Error ? error.message : 'Unknown error',
         });
       }
     };
@@ -42,25 +42,25 @@ function App() {
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       {/* Toolbar header to match ComfyUI style */}
       <div
-        className="p-toolbar p-component border-x-0 border-t-0 rounded-none px-2 py-1 min-h-8"
+        className='p-toolbar p-component border-x-0 border-t-0 rounded-none px-2 py-1 min-h-8'
         style={{
           borderBottom: '1px solid #444',
           background: 'transparent',
           display: 'flex',
-          alignItems: 'center'
+          alignItems: 'center',
         }}
       >
-        <div className="p-toolbar-start" style={{ display: 'flex', alignItems: 'center' }}>
+        <div className='p-toolbar-start' style={{ display: 'flex', alignItems: 'center' }}>
           <span
-            className="text-xs 2xl:text-sm truncate"
+            className='text-xs 2xl:text-sm truncate'
             style={{ color: '#fff' }}
-            title="ComfyUI Distributed"
+            title='ComfyUI Distributed'
           >
             COMFYUI DISTRIBUTED
           </span>
         </div>
-        <div className="p-toolbar-center"></div>
-        <div className="p-toolbar-end"></div>
+        <div className='p-toolbar-center'></div>
+        <div className='p-toolbar-end'></div>
       </div>
 
       {/* Main content */}

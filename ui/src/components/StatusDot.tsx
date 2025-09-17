@@ -3,13 +3,13 @@ import { StatusDotProps, WorkerStatus } from '@/types/worker';
 
 const getStatusColor = (status: WorkerStatus): string => {
   switch (status) {
-    case 'online':
+    case WorkerStatus.ONLINE:
       return STATUS_COLORS.ONLINE_GREEN;
-    case 'offline':
+    case WorkerStatus.OFFLINE:
       return STATUS_COLORS.OFFLINE_RED;
-    case 'processing':
+    case WorkerStatus.PROCESSING:
       return STATUS_COLORS.PROCESSING_YELLOW;
-    case 'disabled':
+    case WorkerStatus.DISABLED:
       return STATUS_COLORS.DISABLED_GRAY;
     default:
       return STATUS_COLORS.DISABLED_GRAY;
@@ -18,24 +18,20 @@ const getStatusColor = (status: WorkerStatus): string => {
 
 const getStatusTitle = (status: WorkerStatus): string => {
   switch (status) {
-    case 'online':
+    case WorkerStatus.ONLINE:
       return 'Online';
-    case 'offline':
+    case WorkerStatus.OFFLINE:
       return 'Offline';
-    case 'processing':
+    case WorkerStatus.PROCESSING:
       return 'Processing';
-    case 'disabled':
+    case WorkerStatus.DISABLED:
       return 'Disabled';
     default:
       return 'Unknown';
   }
 };
 
-export const StatusDot: React.FC<StatusDotProps> = ({
-  status,
-  isPulsing = false,
-  size = 10
-}) => {
+export const StatusDot: React.FC<StatusDotProps> = ({ status, isPulsing = false, size = 10 }) => {
   const color = getStatusColor(status);
   const title = getStatusTitle(status);
 
@@ -48,7 +44,7 @@ export const StatusDot: React.FC<StatusDotProps> = ({
         borderRadius: '50%',
         backgroundColor: color,
         marginRight: '10px',
-        flexShrink: 0
+        flexShrink: 0,
       }}
       className={isPulsing ? 'status-pulsing' : ''}
       title={title}

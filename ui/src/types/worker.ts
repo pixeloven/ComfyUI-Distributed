@@ -1,4 +1,11 @@
-export interface Worker {
+export enum WorkerStatus {
+  ONLINE = 'online',
+  OFFLINE = 'offline',
+  PROCESSING = 'processing',
+  DISABLED = 'disabled',
+}
+
+export interface DistributedWorker {
   id: string;
   name: string;
   host: string;
@@ -7,7 +14,7 @@ export interface Worker {
   cuda_device?: number;
   type?: 'local' | 'remote' | 'cloud';
   connection?: string;
-  status?: 'online' | 'offline' | 'processing' | 'disabled';
+  status?: WorkerStatus;
   extra_args?: string;
 }
 
@@ -21,13 +28,48 @@ export interface MasterNode {
 
 export interface Config {
   master?: MasterNode;
-  workers?: Worker[];
+  workers?: DistributedWorker[];
+  settings?: {
+    debug?: boolean;
+    auto_launch_workers?: boolean;
+    stop_workers_on_master_exit?: boolean;
+    worker_timeout_seconds?: number;
+  };
 }
-
-export type WorkerStatus = 'online' | 'offline' | 'processing' | 'disabled';
 
 export interface StatusDotProps {
   status: WorkerStatus;
   isPulsing?: boolean;
   size?: number;
+}
+
+export interface ExecutionState {
+  isExecuting: boolean;
+  totalBatches: number;
+  completedBatches: number;
+  currentBatch: number;
+  progress: number;
+  errors: string[];
+}
+
+export interface ConnectionState {
+  isConnected: boolean;
+  masterIP: string;
+  isValidatingConnection: boolean;
+  connectionError?: string;
+}
+
+export interface AppState {
+  workers: DistributedWorker[];
+  master?: MasterNode;
+  executionState: ExecutionState;
+  connectionState: ConnectionState;
+  config: Config | null;
+  logs: string[];
+}
+
+export interface ApiResponse<T = any> {
+  success: boolean;
+  data?: T;
+  error?: string;
 }

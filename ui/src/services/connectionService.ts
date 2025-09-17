@@ -19,13 +19,13 @@ export class ConnectionService {
       const response = await fetch('/distributed/validate_connection', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           connection: connection.trim(),
           test_connectivity: testConnectivity,
-          timeout
-        })
+          timeout,
+        }),
       });
 
       if (!response.ok) {
@@ -34,11 +34,10 @@ export class ConnectionService {
 
       const result: ConnectionValidationResult = await response.json();
       return result;
-
     } catch (error) {
       return {
         status: 'error',
-        error: error instanceof Error ? error.message : 'Connection validation failed'
+        error: error instanceof Error ? error.message : 'Connection validation failed',
       };
     }
   }
@@ -57,17 +56,17 @@ export class ConnectionService {
     const trimmed = connection.trim();
 
     // Handle full URLs (http://host:port or https://host:port)
-    const urlMatch = trimmed.match(/^(https?):\/\/([^:\/]+)(?::(\d+))?/);
+    const urlMatch = trimmed.match(/^(https?):\/\/([^:/]+)(?::(\d+))?/);
     if (urlMatch) {
       const [, protocol, host, portStr] = urlMatch;
-      const port = portStr ? parseInt(portStr) : (protocol === 'https' ? 443 : 80);
+      const port = portStr ? parseInt(portStr) : protocol === 'https' ? 443 : 80;
       const type = this.getConnectionType(host, protocol as 'http' | 'https');
 
       return {
         host,
         port,
         protocol: protocol as 'http' | 'https',
-        type
+        type,
       };
     }
 
@@ -83,26 +82,35 @@ export class ConnectionService {
         host,
         port,
         protocol,
-        type
+        type,
       };
     }
 
     return null;
   }
 
-  private getConnectionType(host: string, protocol: 'http' | 'https'): 'local' | 'remote' | 'cloud' {
+  private getConnectionType(
+    host: string,
+    protocol: 'http' | 'https'
+  ): 'local' | 'remote' | 'cloud' {
     // Local hosts
-    if (host === 'localhost' || host === '127.0.0.1' || host.startsWith('192.168.') || host.startsWith('10.')) {
+    if (
+      host === 'localhost' ||
+      host === '127.0.0.1' ||
+      host.startsWith('192.168.') ||
+      host.startsWith('10.')
+    ) {
       return 'local';
     }
 
     // Cloud services (typically HTTPS with specific domains)
-    if (protocol === 'https' && (
-      host.includes('.trycloudflare.com') ||
-      host.includes('.ngrok.io') ||
-      host.includes('.runpod.') ||
-      host.includes('.vast.ai')
-    )) {
+    if (
+      protocol === 'https' &&
+      (host.includes('.trycloudflare.com') ||
+        host.includes('.ngrok.io') ||
+        host.includes('.runpod.') ||
+        host.includes('.vast.ai'))
+    ) {
       return 'cloud';
     }
 
@@ -118,25 +126,28 @@ export class ConnectionService {
       { label: 'Local 8189', value: 'localhost:8189' },
       { label: 'Local 8190', value: 'localhost:8190' },
       { label: 'Local 8191', value: 'localhost:8191' },
-      { label: 'Local 8192', value: 'localhost:8192' }
+      { label: 'Local 8192', value: 'localhost:8192' },
     ];
   }
 
   /**
    * Format validation result for display
    */
-  formatValidationMessage(result: ConnectionValidationResult): { message: string; type: 'success' | 'error' | 'warning' | 'info' } {
+  formatValidationMessage(result: ConnectionValidationResult): {
+    message: string;
+    type: 'success' | 'error' | 'warning' | 'info';
+  } {
     if (result.status === 'error') {
       return {
         message: `✗ ${result.error}`,
-        type: 'error'
+        type: 'error',
       };
     }
 
     if (result.status === 'invalid') {
       return {
         message: `✗ Invalid connection: ${result.error}`,
-        type: 'error'
+        type: 'error',
       };
     }
 
@@ -145,15 +156,17 @@ export class ConnectionService {
         const conn = result.connectivity;
         if (conn.reachable) {
           const responseTime = conn.response_time ? ` (${conn.response_time}ms)` : '';
-          const workerInfo = conn.worker_info?.device_name ? ` - ${conn.worker_info.device_name}` : '';
+          const workerInfo = conn.worker_info?.device_name
+            ? ` - ${conn.worker_info.device_name}`
+            : '';
           return {
             message: `✓ Connection successful${responseTime}${workerInfo}`,
-            type: 'success'
+            type: 'success',
           };
         } else {
           return {
             message: `✗ Connection failed: ${conn.error}`,
-            type: 'error'
+            type: 'error',
           };
         }
       } else {
@@ -162,19 +175,19 @@ export class ConnectionService {
         if (details) {
           return {
             message: `✓ Valid ${details.type} connection (${details.protocol}://${details.host}:${details.port})`,
-            type: 'success'
+            type: 'success',
           };
         }
         return {
           message: '✓ Valid connection format',
-          type: 'success'
+          type: 'success',
         };
       }
     }
 
     return {
       message: 'Unknown validation result',
-      type: 'warning'
+      type: 'warning',
     };
   }
 }

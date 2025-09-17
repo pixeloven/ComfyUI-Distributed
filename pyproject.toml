@@ -6,10 +6,11 @@ license = {file = "LICENSE"}
 dependencies  = []
 
 [project.urls]
-Repository = "https://github.com/robertvoy/ComfyUI-Distributed"
+Repository = "https://github.com/pixeloven/ComfyUI-Distributed"
 #  Used by Comfy Registry https://comfyregistry.org
 
 [tool.comfy]
-PublisherId = "robertvoy"
+PublisherId = "pixeloven"
 DisplayName = "ComfyUI-Distributed"
-Icon = "https://raw.githubusercontent.com/robertvoy/ComfyUI-Distributed/refs/heads/main/web/distributed-logo-icon.png"
+Icon = "https://raw.githubusercontent.com/pixeloven/ComfyUI-Distributed/refs/heads/main/web/distributed-logo-icon.png"
+includes = ["ui/dist/"]

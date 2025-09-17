@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ToastService } from '../services/toastService';
+import { createApiClient } from '../services/apiClient';
 
 interface Settings {
   debug: boolean;
@@ -9,6 +10,7 @@ interface Settings {
 }
 
 const toastService = ToastService.getInstance();
+const apiClient = createApiClient(window.location.origin);
 
 export const SettingsPanel: React.FC = () => {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -16,7 +18,7 @@ export const SettingsPanel: React.FC = () => {
     debug: false,
     auto_launch_workers: false,
     stop_workers_on_master_exit: true,
-    worker_timeout_seconds: 60
+    worker_timeout_seconds: 60,
   });
   const [isLoading, setIsLoading] = useState(true);
 
@@ -35,7 +37,7 @@ export const SettingsPanel: React.FC = () => {
           debug: config.settings.debug || false,
           auto_launch_workers: config.settings.auto_launch_workers || false,
           stop_workers_on_master_exit: config.settings.stop_workers_on_master_exit !== false, // Default true
-          worker_timeout_seconds: config.settings.worker_timeout_seconds || 60
+          worker_timeout_seconds: config.settings.worker_timeout_seconds || 60,
         });
       }
     } catch (error) {
@@ -47,15 +49,7 @@ export const SettingsPanel: React.FC = () => {
 
   const updateSetting = async (key: keyof Settings, value: boolean | number) => {
     try {
-      const response = await fetch('/distributed/setting', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ key, value })
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
+      await apiClient.updateSetting(key, value);
 
       // Update local state
       setSettings(prev => ({ ...prev, [key]: value }));
@@ -71,7 +65,6 @@ export const SettingsPanel: React.FC = () => {
       }
 
       toastService.success('Setting Updated', detail, 2000);
-
     } catch (error) {
       console.error(`Error updating setting '${key}':`, error);
       toastService.error(
@@ -86,9 +79,10 @@ export const SettingsPanel: React.FC = () => {
     setIsExpanded(!isExpanded);
   };
 
-  const handleCheckboxChange = (key: keyof Settings) => (e: React.ChangeEvent<HTMLInputElement>) => {
-    updateSetting(key, e.target.checked);
-  };
+  const handleCheckboxChange =
+    (key: keyof Settings) => (e: React.ChangeEvent<HTMLInputElement>) => {
+      updateSetting(key, e.target.checked);
+    };
 
   const handleTimeoutChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = parseInt(e.target.value, 10);
@@ -112,33 +106,33 @@ export const SettingsPanel: React.FC = () => {
         style={{
           padding: '16.5px 0',
           cursor: 'pointer',
-          userSelect: 'none'
+          userSelect: 'none',
         }}
         onClick={handleToggle}
-        onMouseEnter={(e) => {
+        onMouseEnter={e => {
           const toggle = e.currentTarget.querySelector('.settings-toggle');
           if (toggle) (toggle as HTMLElement).style.color = '#fff';
         }}
-        onMouseLeave={(e) => {
+        onMouseLeave={e => {
           const toggle = e.currentTarget.querySelector('.settings-toggle');
           if (toggle) (toggle as HTMLElement).style.color = '#888';
         }}
       >
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between'
-        }}>
-          <h4 style={{ margin: 0, fontSize: '14px', color: '#fff' }}>
-            Settings
-          </h4>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}
+        >
+          <h4 style={{ margin: 0, fontSize: '14px', color: '#fff' }}>Settings</h4>
           <span
-            className="settings-toggle"
+            className='settings-toggle'
             style={{
               fontSize: '12px',
               color: '#888',
               transition: 'all 0.2s ease',
-              transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)'
+              transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)',
             }}
           >
             ▶
@@ -147,9 +141,7 @@ export const SettingsPanel: React.FC = () => {
       </div>
 
       {/* Bottom separator when collapsed */}
-      {!isExpanded && (
-        <div style={{ borderBottom: '1px solid #444', margin: 0 }} />
-      )}
+      {!isExpanded && <div style={{ borderBottom: '1px solid #444', margin: 0 }} />}
 
       {/* Settings Content */}
       <div
@@ -157,7 +149,7 @@ export const SettingsPanel: React.FC = () => {
           maxHeight: isExpanded ? '200px' : '0',
           overflow: 'hidden',
           opacity: isExpanded ? 1 : 0,
-          transition: 'max-height 0.3s ease, opacity 0.3s ease'
+          transition: 'max-height 0.3s ease, opacity 0.3s ease',
         }}
       >
         <div
@@ -167,35 +159,37 @@ export const SettingsPanel: React.FC = () => {
             rowGap: '10px',
             columnGap: '10px',
             paddingTop: '10px',
-            alignItems: 'center'
+            alignItems: 'center',
           }}
         >
           {/* General Section */}
-          <div style={{
-            gridColumn: '1 / -1',
-            fontSize: '12px',
-            fontWeight: 'bold',
-            color: '#fff',
-            marginTop: '5px'
-          }}>
+          <div
+            style={{
+              gridColumn: '1 / -1',
+              fontSize: '12px',
+              fontWeight: 'bold',
+              color: '#fff',
+              marginTop: '5px',
+            }}
+          >
             General
           </div>
 
           {/* Debug Mode */}
           <label
-            htmlFor="setting-debug"
+            htmlFor='setting-debug'
             style={{
               fontSize: '12px',
               color: '#ddd',
-              cursor: 'pointer'
+              cursor: 'pointer',
             }}
           >
             Debug Mode
           </label>
           <div>
             <input
-              type="checkbox"
-              id="setting-debug"
+              type='checkbox'
+              id='setting-debug'
               checked={settings.debug}
               onChange={handleCheckboxChange('debug')}
               style={{ cursor: 'pointer' }}
@@ -204,19 +198,19 @@ export const SettingsPanel: React.FC = () => {
 
           {/* Auto Launch Workers */}
           <label
-            htmlFor="setting-auto-launch"
+            htmlFor='setting-auto-launch'
             style={{
               fontSize: '12px',
               color: '#ddd',
-              cursor: 'pointer'
+              cursor: 'pointer',
             }}
           >
             Auto-launch Workers
           </label>
           <div>
             <input
-              type="checkbox"
-              id="setting-auto-launch"
+              type='checkbox'
+              id='setting-auto-launch'
               checked={settings.auto_launch_workers}
               onChange={handleCheckboxChange('auto_launch_workers')}
               style={{ cursor: 'pointer' }}
@@ -225,19 +219,19 @@ export const SettingsPanel: React.FC = () => {
 
           {/* Stop Local Workers on Master Exit */}
           <label
-            htmlFor="setting-stop-on-exit"
+            htmlFor='setting-stop-on-exit'
             style={{
               fontSize: '12px',
               color: '#ddd',
-              cursor: 'pointer'
+              cursor: 'pointer',
             }}
           >
             Stop Local Workers on Master Exit
           </label>
           <div>
             <input
-              type="checkbox"
-              id="setting-stop-on-exit"
+              type='checkbox'
+              id='setting-stop-on-exit'
               checked={settings.stop_workers_on_master_exit}
               onChange={handleCheckboxChange('stop_workers_on_master_exit')}
               style={{ cursor: 'pointer' }}
@@ -245,33 +239,35 @@ export const SettingsPanel: React.FC = () => {
           </div>
 
           {/* Timeouts Section */}
-          <div style={{
-            gridColumn: '1 / -1',
-            fontSize: '12px',
-            fontWeight: 'bold',
-            color: '#fff',
-            marginTop: '10px'
-          }}>
+          <div
+            style={{
+              gridColumn: '1 / -1',
+              fontSize: '12px',
+              fontWeight: 'bold',
+              color: '#fff',
+              marginTop: '10px',
+            }}
+          >
             Timeouts
           </div>
 
           {/* Worker Timeout */}
           <label
-            htmlFor="setting-timeout"
+            htmlFor='setting-timeout'
             style={{
               fontSize: '12px',
               color: '#ddd',
-              cursor: 'pointer'
+              cursor: 'pointer',
             }}
           >
             Worker Timeout (seconds)
           </label>
           <div>
             <input
-              type="number"
-              id="setting-timeout"
-              min="10"
-              step="1"
+              type='number'
+              id='setting-timeout'
+              min='10'
+              step='1'
               value={settings.worker_timeout_seconds}
               onChange={handleTimeoutChange}
               style={{
@@ -281,7 +277,7 @@ export const SettingsPanel: React.FC = () => {
                 color: '#ddd',
                 border: '1px solid #333',
                 borderRadius: '3px',
-                fontSize: '12px'
+                fontSize: '12px',
               }}
             />
           </div>

@@ -36,7 +36,7 @@ export class ToastService {
           severity: options.severity,
           summary: options.summary,
           detail: options.detail,
-          life: options.life || 3000
+          life: options.life || 3000,
         });
       } else {
         // Fallback to console logging if toast system is not available
@@ -56,7 +56,7 @@ export class ToastService {
       severity: 'success',
       summary,
       detail,
-      life
+      life,
     });
   }
 
@@ -68,7 +68,7 @@ export class ToastService {
       severity: 'error',
       summary,
       detail,
-      life: life || 5000 // Errors shown longer by default
+      life: life || 5000, // Errors shown longer by default
     });
   }
 
@@ -80,7 +80,7 @@ export class ToastService {
       severity: 'warn',
       summary,
       detail,
-      life
+      life,
     });
   }
 
@@ -92,7 +92,7 @@ export class ToastService {
       severity: 'info',
       summary,
       detail,
-      life
+      life,
     });
   }
 
@@ -140,13 +140,19 @@ export class ToastService {
   /**
    * Show worker action notifications (start, stop, delete)
    */
-  public workerAction(action: string, workerName: string, success: boolean, message?: string): void {
-    const actionPast = {
-      start: 'started',
-      stop: 'stopped',
-      delete: 'deleted',
-      launch: 'launched'
-    }[action] || action;
+  public workerAction(
+    action: string,
+    workerName: string,
+    success: boolean,
+    message?: string
+  ): void {
+    const actionPast =
+      {
+        start: 'started',
+        stop: 'stopped',
+        delete: 'deleted',
+        launch: 'launched',
+      }[action] || action;
 
     if (success) {
       this.success(
@@ -173,28 +179,19 @@ export class ToastService {
   /**
    * Show distributed execution notifications
    */
-  public distributedExecution(type: 'offline_workers' | 'master_unreachable' | 'execution_failed', details: string): void {
+  public distributedExecution(
+    type: 'offline_workers' | 'master_unreachable' | 'execution_failed',
+    details: string
+  ): void {
     switch (type) {
       case 'offline_workers':
-        this.error(
-          'All Workers Offline',
-          details,
-          5000
-        );
+        this.error('All Workers Offline', details, 5000);
         break;
       case 'master_unreachable':
-        this.error(
-          'Master Unreachable',
-          details,
-          5000
-        );
+        this.error('Master Unreachable', details, 5000);
         break;
       case 'execution_failed':
-        this.error(
-          'Execution Failed',
-          details,
-          5000
-        );
+        this.error('Execution Failed', details, 5000);
         break;
     }
   }

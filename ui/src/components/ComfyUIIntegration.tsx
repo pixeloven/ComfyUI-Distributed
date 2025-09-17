@@ -48,18 +48,18 @@ export class ComfyUIDistributedExtension {
     }
 
     window.app.extensionManager.registerSidebarTab({
-      id: "distributed",
-      icon: "pi pi-server",
-      title: "Distributed",
-      tooltip: "Distributed Control Panel",
-      type: "custom",
+      id: 'distributed',
+      icon: 'pi pi-server',
+      title: 'Distributed',
+      tooltip: 'Distributed Control Panel',
+      type: 'custom',
       render: (el: HTMLElement) => {
         this.onPanelOpen();
         return this.renderReactApp(el);
       },
       destroy: () => {
         this.onPanelClose();
-      }
+      },
     });
   }
 
