@@ -172,6 +172,18 @@ export class ApiClient {
     return this.request<NetworkInfoResponse>('/distributed/network_info');
   }
 
+  // Connection testing
+  async validateConnection(connection: string, testConnectivity: boolean = true, timeout: number = 10): Promise<any> {
+    return this.request('/distributed/validate_connection', {
+      method: 'POST',
+      body: JSON.stringify({
+        connection,
+        test_connectivity: testConnectivity,
+        timeout
+      })
+    });
+  }
+
   // Status checking
   async checkStatus(url: string, timeout: number = TIMEOUTS.STATUS_CHECK): Promise<StatusResponse> {
     const controller = new AbortController();

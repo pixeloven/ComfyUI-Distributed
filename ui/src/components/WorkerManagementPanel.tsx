@@ -28,14 +28,23 @@ export function WorkerManagementPanel() {
   const [clearMemoryLoading, setClearMemoryLoading] = useState(false);
 
   useEffect(() => {
+    console.log('[React] WorkerManagementPanel useEffect running');
     loadConfiguration();
-    const interval = setInterval(checkStatuses, 2000);
-    return () => clearInterval(interval);
   }, []);
 
+  useEffect(() => {
+    if (workers.length > 0) {
+      console.log('[React] Starting status check interval');
+      const interval = setInterval(checkStatuses, 2000);
+      return () => clearInterval(interval);
+    }
+  }, [workers]);
+
   const loadConfiguration = async () => {
+    console.log('[React] Loading configuration...');
     try {
       const configResponse = await apiClient.getConfig();
+      console.log('[React] Config response:', configResponse);
 
       // Convert to our Config type
       const config = {
@@ -72,22 +81,90 @@ export function WorkerManagementPanel() {
         });
       }
 
+      console.log('[React] Configuration loaded successfully');
       setIsLoading(false);
     } catch (error) {
-      console.error('Failed to load configuration:', error);
+      console.error('[React] Failed to load configuration:', error);
       setIsLoading(false);
     }
   };
 
+  const getWorkerUrl = (worker: any, endpoint = '') => {
+    const host = worker.host || window.location.hostname;
+
+    // Cloud workers always use HTTPS
+    const isCloud = worker.type === 'cloud';
+
+    // Detect if we're running on Runpod (for local workers on Runpod infrastructure)
+    const isRunpodProxy = host.endsWith('.proxy.runpod.net');
+
+    // For local workers on Runpod, construct the port-specific proxy URL
+    let finalHost = host;
+    if (!worker.host && isRunpodProxy) {
+      const match = host.match(/^(.*)\.proxy\.runpod\.net$/);
+      if (match) {
+        const podId = match[1];
+        const domain = 'proxy.runpod.net';
+        finalHost = `${podId}-${worker.port}.${domain}`;
+      } else {
+        console.error(`Failed to parse Runpod proxy host: ${host}`);
+      }
+    }
+
+    // If worker has a connection string, use it directly
+    if (worker.connection) {
+      // Check if connection already has protocol
+      if (worker.connection.startsWith('http://') || worker.connection.startsWith('https://')) {
+        return worker.connection + endpoint;
+      } else {
+        // Add protocol based on worker type and port
+        const useHttps = isCloud || isRunpodProxy || worker.port === 443;
+        const protocol = useHttps ? 'https' : 'http';
+        return `${protocol}://${worker.connection}${endpoint}`;
+      }
+    }
+
+    // Determine protocol: HTTPS for cloud, Runpod proxies, or port 443
+    const useHttps = isCloud || isRunpodProxy || worker.port === 443;
+    const protocol = useHttps ? 'https' : 'http';
+
+    // Only add port if non-standard
+    const defaultPort = useHttps ? 443 : 80;
+    const needsPort = !isRunpodProxy && worker.port !== defaultPort;
+    const portStr = needsPort ? `:${worker.port}` : '';
+
+    return `${protocol}://${finalHost}${portStr}${endpoint}`;
+  };
+
   const checkStatuses = async () => {
+    console.log(`[React] checkStatuses running with ${workers.length} workers`);
     // Check worker statuses
     for (const worker of workers) {
       if (worker.enabled) {
         try {
-          const url = worker.connection || `http://${worker.host}:${worker.port}`;
-          await apiClient.checkStatus(`${url}/system_stats`);
-          setWorkerStatus(worker.id, 'online');
+          // Use /prompt endpoint like legacy UI
+          const url = getWorkerUrl(worker, '/prompt');
+          console.log(`[React] Checking status for ${worker.name} at: ${url}`);
+
+          const response = await fetch(url, {
+            method: 'GET',
+            mode: 'cors',
+            signal: AbortSignal.timeout(1200) // Match legacy timeout
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            const queueRemaining = data.exec_info?.queue_remaining || 0;
+            const isProcessing = queueRemaining > 0;
+
+            console.log(`[React] ${worker.name} status OK - queue: ${queueRemaining}, processing: ${isProcessing}`);
+            setWorkerStatus(worker.id, isProcessing ? 'processing' : 'online');
+          } else {
+            console.log(`[React] ${worker.name} status failed - HTTP ${response.status}`);
+            setWorkerStatus(worker.id, 'offline');
+          }
         } catch (error) {
+          console.log(`[React] ${worker.name} status error:`, error instanceof Error ? error.message : String(error));
           setWorkerStatus(worker.id, 'offline');
         }
       }
@@ -101,25 +178,6 @@ export function WorkerManagementPanel() {
     });
   };
 
-  const handleStartWorker = async (workerId: string) => {
-    try {
-      setWorkerStatus(workerId, 'processing');
-      await apiClient.launchWorker(workerId);
-      // Status will be updated by the periodic check
-    } catch (error) {
-      console.error('Failed to start worker:', error);
-      setWorkerStatus(workerId, 'offline');
-    }
-  };
-
-  const handleStopWorker = async (workerId: string) => {
-    try {
-      await apiClient.stopWorker(workerId);
-      setWorkerStatus(workerId, 'offline');
-    } catch (error) {
-      console.error('Failed to stop worker:', error);
-    }
-  };
 
   const handleDeleteWorker = async (workerId: string) => {
     try {
@@ -164,8 +222,7 @@ export function WorkerManagementPanel() {
 
     const results = await Promise.allSettled(
       enabledWorkers.map(async (worker) => {
-        const workerUrl = worker.connection || `http://${worker.host}:${worker.port}`;
-        const url = `${workerUrl}${endpoint}`;
+        const url = getWorkerUrl(worker, endpoint);
 
         try {
           const response = await fetch(url, {
@@ -351,8 +408,6 @@ export function WorkerManagementPanel() {
                   key={worker.id}
                   worker={worker}
                   onToggle={handleToggleWorker}
-                  onStart={handleStartWorker}
-                  onStop={handleStopWorker}
                   onDelete={handleDeleteWorker}
                   onSaveSettings={handleSaveWorkerSettings}
                 />

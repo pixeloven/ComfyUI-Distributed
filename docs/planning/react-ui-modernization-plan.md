@@ -115,13 +115,36 @@ Transform ComfyUI-Distributed's frontend from vanilla JavaScript to a modern Rea
 
 **Parity Tasks:**
 - [x] Basic ConnectionInput with validation *(completed)*
-- [ ] Complete worker addition workflow with connection testing
-- [ ] Execution engine with queue prompt interception
-- [ ] Worker log viewer modal (matching legacy behavior)
-- [ ] Settings panel with all legacy configuration options
-- [ ] Toast notification integration with ComfyUI system
-- [ ] Advanced worker operations (VRAM/interrupt)
-**Success Criteria**: React UI can perform every function that the legacy UI can perform, with identical behavior and user experience.
+- [x] Complete worker addition workflow with connection testing *(completed)*
+- [x] Execution engine with queue prompt interception *(completed)*
+- [x] Worker log viewer modal (matching legacy behavior) *(completed)*
+- [x] Settings panel with all legacy configuration options *(completed)*
+- [x] Toast notification integration with ComfyUI system *(completed)*
+- [x] Advanced worker operations (VRAM/interrupt) *(completed)*
+- [x] Worker card dropdown expansion (replaced edit dialogs) *(completed)*
+- [x] Auto-worker creation (master port +1, no dialog) *(completed)*
+- [x] Visual worker type differentiation *(completed)*
+
+**Remaining Gap Closure (3-Phase Plan):**
+
+**Phase 1: Complete Known Gaps**
+- [ ] Master card inline form (Name, Host only - matching legacy)
+- [ ] Connection test button functionality (actual testing, not placeholder)
+- [ ] Audit and implement any missing worker testing functions
+- [ ] Final visual consistency check (spacing, colors, layout)
+
+**Phase 2: Behavioral Test Suite (Modified Option C)**
+- [ ] API call equivalence testing (both UIs make identical backend requests)
+- [ ] User flow validation (same inputs produce same outputs)
+- [ ] Network request comparison (endpoints, payloads, responses)
+- [ ] Error handling parity (same error conditions, same user feedback)
+
+**Phase 3: User Flow Validation**
+- [ ] Critical workflow testing on both UIs
+- [ ] Final state comparison (user-visible outcomes)
+- [ ] Edge case and error condition verification
+
+**Success Criteria**: React UI can perform every function that the legacy UI can perform, with identical behavior and user experience. Behavioral testing confirms 100% functional parity.
 
 ### Phase 8: Automated Testing Suite 📝 PLANNED
 **Goal**: Implement comprehensive testing to verify feature parity and prevent regressions
@@ -132,13 +155,18 @@ Transform ComfyUI-Distributed's frontend from vanilla JavaScript to a modern Rea
 - Need for reliable way to test distributed functionality
 - Missing confidence in production readiness
 
+**Testing Strategy:**
+Behavioral testing approach (not DOM comparison) since React and vanilla JS produce different HTML structures but should have identical user-facing behavior.
+
 **Testing Tasks:**
 - [ ] Playwright end-to-end testing for parity verification
+- [ ] Behavioral equivalence testing (API calls, user flows, state changes)
 - [ ] Unit test coverage for all components and services
 - [ ] Integration testing for worker management workflows
 - [ ] API endpoint testing for distributed functionality
 - [ ] Cross-browser compatibility testing
 - [ ] Performance regression testing
+- [ ] Legacy vs React behavior comparison suite
 
 ### Phase 9: Enhanced Features & Improvements 📝 PLANNED
 **Goal**: Add improvements beyond legacy UI capabilities

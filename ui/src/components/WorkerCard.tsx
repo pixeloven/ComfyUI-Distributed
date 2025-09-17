@@ -1,14 +1,12 @@
 import { useState } from 'react';
-import { Worker } from '@/types/worker';
+import { Worker } from '@/types';
 import { StatusDot } from './StatusDot';
-import { WorkerLogModal } from './WorkerLogModal';
 import { UI_COLORS } from '@/utils/constants';
+import { createApiClient } from '@/services/apiClient';
 
 interface WorkerCardProps {
   worker: Worker;
   onToggle?: (workerId: string, enabled: boolean) => void;
-  onStart?: (workerId: string) => void;
-  onStop?: (workerId: string) => void;
   onDelete?: (workerId: string) => void;
   onSaveSettings?: (workerId: string, settings: Partial<Worker>) => void;
 }
@@ -16,14 +14,14 @@ interface WorkerCardProps {
 export const WorkerCard: React.FC<WorkerCardProps> = ({
   worker,
   onToggle,
-  onStart,
-  onStop,
   onDelete,
   onSaveSettings
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [editedWorker, setEditedWorker] = useState<Partial<Worker>>(worker);
-  const [showLogModal, setShowLogModal] = useState(false);
+  const [connectionTestResult, setConnectionTestResult] = useState<{message: string, type: 'success' | 'error' | 'warning'} | null>(null);
+  const [isTestingConnection, setIsTestingConnection] = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   const isRemote = worker.type === 'remote' || worker.type === 'cloud';
   const isCloud = worker.type === 'cloud';
@@ -56,6 +54,24 @@ export const WorkerCard: React.FC<WorkerCardProps> = ({
 
   const handleToggle = () => {
     onToggle?.(worker.id, !worker.enabled);
+  };
+
+  const handleSaveSettings = () => {
+    onSaveSettings?.(worker.id, editedWorker);
+    setHasUnsavedChanges(false);
+    setConnectionTestResult(null);
+  };
+
+  const handleCancelSettings = () => {
+    setEditedWorker(worker);
+    setHasUnsavedChanges(false);
+    setConnectionTestResult(null);
+  };
+
+  const handleFieldChange = (field: keyof Worker, value: any) => {
+    setEditedWorker(prev => ({ ...prev, [field]: value }));
+    setHasUnsavedChanges(true);
+    setConnectionTestResult(null);
   };
 
   const infoText = getInfoText();
@@ -115,73 +131,6 @@ export const WorkerCard: React.FC<WorkerCardProps> = ({
 
           {/* Controls */}
           <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-            {worker.enabled && (
-              <>
-                {worker.status === 'online' ? (
-                  <button
-                    style={{
-                      padding: '4px 14px',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '4px',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s',
-                      fontSize: '11px',
-                      fontWeight: '500',
-                      backgroundColor: '#7c4a4a'
-                    }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onStop?.(worker.id);
-                    }}
-                    className="distributed-button"
-                  >
-                    Stop
-                  </button>
-                ) : (
-                  <button
-                    style={{
-                      padding: '4px 14px',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '4px',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s',
-                      fontSize: '11px',
-                      fontWeight: '500',
-                      backgroundColor: '#4a7c4a'
-                    }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onStart?.(worker.id);
-                    }}
-                    className="distributed-button"
-                  >
-                    Start
-                  </button>
-                )}
-                <button
-                  style={{
-                    padding: '4px 14px',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '4px',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s',
-                    fontSize: '11px',
-                    fontWeight: '500',
-                    backgroundColor: '#685434'
-                  }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setShowLogModal(true);
-                  }}
-                  className="distributed-button"
-                >
-                  Log
-                </button>
-              </>
-            )}
 
             {/* Dropdown arrow indicator */}
             <span
@@ -213,37 +162,14 @@ export const WorkerCard: React.FC<WorkerCardProps> = ({
             borderRadius: '4px',
             border: `1px solid ${UI_COLORS.BACKGROUND_DARK}`
           }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '10px', alignItems: 'center' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {/* Name */}
-              <label style={{ fontSize: '12px', color: '#ccc' }}>Name</label>
-              <input
-                type="text"
-                value={editedWorker.name || ''}
-                onChange={(e) => {
-                  setEditedWorker({ ...editedWorker, name: e.target.value });
-                  onSaveSettings?.(worker.id, { ...editedWorker, name: e.target.value });
-                }}
-                style={{
-                  padding: '4px 8px',
-                  background: '#222',
-                  border: '1px solid #333',
-                  color: '#ddd',
-                  fontSize: '12px',
-                  borderRadius: '3px',
-                  width: '150px'
-                }}
-              />
-
-              {/* Connection */}
-              <label style={{ fontSize: '12px', color: '#ccc' }}>Connection</label>
-              <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '12px', color: '#ccc' }}>Name</label>
                 <input
                   type="text"
-                  value={editedWorker.connection || ''}
-                  onChange={(e) => {
-                    setEditedWorker({ ...editedWorker, connection: e.target.value });
-                    onSaveSettings?.(worker.id, { ...editedWorker, connection: e.target.value });
-                  }}
+                  value={editedWorker.name || ''}
+                  onChange={(e) => handleFieldChange('name', e.target.value)}
                   style={{
                     padding: '4px 8px',
                     background: '#222',
@@ -251,10 +177,30 @@ export const WorkerCard: React.FC<WorkerCardProps> = ({
                     color: '#ddd',
                     fontSize: '12px',
                     borderRadius: '3px',
-                    width: '120px'
+                    width: '100%'
                   }}
-                  placeholder="host:port or URL"
                 />
+              </div>
+
+              {/* Connection */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '12px', color: '#ccc' }}>Connection</label>
+                <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                  <input
+                    type="text"
+                    value={editedWorker.connection || ''}
+                    onChange={(e) => handleFieldChange('connection', e.target.value)}
+                    style={{
+                      padding: '4px 8px',
+                      background: '#222',
+                      border: '1px solid #333',
+                      color: '#ddd',
+                      fontSize: '12px',
+                      borderRadius: '3px',
+                      flex: '1'
+                    }}
+                    placeholder="host:port or URL"
+                  />
                 <button
                   style={{
                     padding: '4px 8px',
@@ -265,94 +211,237 @@ export const WorkerCard: React.FC<WorkerCardProps> = ({
                     borderRadius: '3px',
                     cursor: 'pointer'
                   }}
-                  onClick={() => {
-                    // TODO: Implement connection test
-                    console.log('Testing connection to:', editedWorker.connection);
+                  onClick={async () => {
+                    const connectionStr = editedWorker.connection || `${editedWorker.host}:${editedWorker.port}`;
+
+                    if (!connectionStr.trim()) {
+                      setConnectionTestResult({
+                        message: '✗ Enter a connection string to test',
+                        type: 'error'
+                      });
+                      return;
+                    }
+
+                    setIsTestingConnection(true);
+                    setConnectionTestResult({
+                      message: 'Testing connection...',
+                      type: 'warning'
+                    });
+
+                    try {
+                      const apiClient = createApiClient(window.location.origin);
+                      const result = await apiClient.validateConnection(connectionStr, true, 10);
+
+                      if (result.status === 'valid' && result.connectivity?.reachable) {
+                        const responseTime = result.connectivity.response_time ?
+                          ` ${result.connectivity.response_time}ms` : '';
+                        const workerInfo = result.connectivity.worker_info?.device_name ?
+                          ` (${result.connectivity.worker_info.device_name})` : '';
+                        setConnectionTestResult({
+                          message: `✓ Connection successful${responseTime}${workerInfo}`,
+                          type: 'success'
+                        });
+                      } else if (result.status === 'valid' && result.connectivity && !result.connectivity.reachable) {
+                        setConnectionTestResult({
+                          message: `✗ Connection failed: ${result.connectivity.error}`,
+                          type: 'error'
+                        });
+                      } else if (result.status === 'invalid') {
+                        setConnectionTestResult({
+                          message: `✗ Invalid connection: ${result.error}`,
+                          type: 'error'
+                        });
+                      } else {
+                        setConnectionTestResult({
+                          message: '✗ Connection test failed',
+                          type: 'error'
+                        });
+                      }
+                    } catch (error) {
+                      setConnectionTestResult({
+                        message: '✗ Test service unavailable',
+                        type: 'error'
+                      });
+                    } finally {
+                      setIsTestingConnection(false);
+                    }
                   }}
+                  disabled={isTestingConnection}
                 >
-                  Test
+                  {isTestingConnection ? 'Testing...' : 'Test'}
                 </button>
+                </div>
+
+                {/* Connection Test Result */}
+                {connectionTestResult && (
+                  <div style={{
+                    fontSize: '11px',
+                    marginTop: '4px',
+                    color: connectionTestResult.type === 'success' ? '#4a7c4a' :
+                           connectionTestResult.type === 'error' ? '#c04c4c' : '#ffa500'
+                  }}>
+                    {connectionTestResult.message}
+                  </div>
+                )}
+
+                {/* Quick Presets for Local Workers */}
+                {editedWorker.type === 'local' && !editedWorker.connection && (
+                  <div style={{ marginTop: '8px' }}>
+                    <div style={{ fontSize: '11px', color: '#999', marginBottom: '4px' }}>
+                      Quick Setup:
+                    </div>
+                  <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                    {['localhost:8189', 'localhost:8190', 'localhost:8191'].map(preset => (
+                      <button
+                        key={preset}
+                        onClick={() => {
+                          handleFieldChange('connection', preset);
+                        }}
+                        style={{
+                          padding: '2px 6px',
+                          fontSize: '10px',
+                          background: '#444',
+                          border: '1px solid #555',
+                          color: '#ddd',
+                          borderRadius: '3px',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.background = '#555';
+                          e.currentTarget.style.borderColor = '#666';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.background = '#444';
+                          e.currentTarget.style.borderColor = '#555';
+                        }}
+                      >
+                        {preset.split(':')[1]}
+                      </button>
+                    ))}
+                  </div>
+                  </div>
+                )}
               </div>
 
               {/* Worker Type */}
-              <label style={{ fontSize: '12px', color: '#ccc' }}>Worker Type</label>
-              <select
-                value={editedWorker.type || 'local'}
-                onChange={(e) => {
-                  setEditedWorker({ ...editedWorker, type: e.target.value as any });
-                  onSaveSettings?.(worker.id, { ...editedWorker, type: e.target.value as any });
-                }}
-                style={{
-                  padding: '4px 8px',
-                  background: '#222',
-                  border: '1px solid #333',
-                  color: '#ddd',
-                  fontSize: '12px',
-                  borderRadius: '3px',
-                  width: '100px'
-                }}
-              >
-                <option value="local">Local</option>
-                <option value="remote">Remote</option>
-                <option value="cloud">Cloud</option>
-              </select>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '12px', color: '#ccc' }}>Worker Type</label>
+                <select
+                  value={editedWorker.type || 'local'}
+                  onChange={(e) => handleFieldChange('type', e.target.value as any)}
+                  style={{
+                    padding: '4px 8px',
+                    background: '#222',
+                    border: '1px solid #333',
+                    color: '#ddd',
+                    fontSize: '12px',
+                    borderRadius: '3px',
+                    width: '100%'
+                  }}
+                >
+                  <option value="local">Local</option>
+                  <option value="remote">Remote</option>
+                  <option value="cloud">Cloud</option>
+                </select>
+              </div>
 
               {/* CUDA Device */}
-              <label style={{ fontSize: '12px', color: '#ccc' }}>CUDA Device</label>
-              <input
-                type="number"
-                value={editedWorker.cuda_device ?? ''}
-                onChange={(e) => {
-                  const value = e.target.value === '' ? undefined : parseInt(e.target.value);
-                  setEditedWorker({ ...editedWorker, cuda_device: value });
-                  onSaveSettings?.(worker.id, { ...editedWorker, cuda_device: value });
-                }}
-                style={{
-                  padding: '4px 8px',
-                  background: '#222',
-                  border: '1px solid #333',
-                  color: '#ddd',
-                  fontSize: '12px',
-                  borderRadius: '3px',
-                  width: '60px'
-                }}
-                min="0"
-                placeholder="auto"
-              />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '12px', color: '#ccc' }}>CUDA Device</label>
+                <input
+                  type="number"
+                  value={editedWorker.cuda_device ?? ''}
+                  onChange={(e) => {
+                    const value = e.target.value === '' ? undefined : parseInt(e.target.value);
+                    handleFieldChange('cuda_device', value);
+                  }}
+                  style={{
+                    padding: '4px 8px',
+                    background: '#222',
+                    border: '1px solid #333',
+                    color: '#ddd',
+                    fontSize: '12px',
+                    borderRadius: '3px',
+                    width: '100%'
+                  }}
+                  min="0"
+                  placeholder="auto"
+                />
+              </div>
 
               {/* Extra Args */}
-              <label style={{ fontSize: '12px', color: '#ccc' }}>Extra Args</label>
-              <input
-                type="text"
-                value={editedWorker.extra_args || ''}
-                onChange={(e) => {
-                  setEditedWorker({ ...editedWorker, extra_args: e.target.value });
-                  onSaveSettings?.(worker.id, { ...editedWorker, extra_args: e.target.value });
-                }}
-                style={{
-                  padding: '4px 8px',
-                  background: '#222',
-                  border: '1px solid #333',
-                  color: '#ddd',
-                  fontSize: '12px',
-                  borderRadius: '3px',
-                  width: '150px'
-                }}
-                placeholder="--listen --port 8190"
-              />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '12px', color: '#ccc' }}>Extra Args</label>
+                <input
+                  type="text"
+                  value={editedWorker.extra_args || ''}
+                  onChange={(e) => handleFieldChange('extra_args', e.target.value)}
+                  style={{
+                    padding: '4px 8px',
+                    background: '#222',
+                    border: '1px solid #333',
+                    color: '#ddd',
+                    fontSize: '12px',
+                    borderRadius: '3px',
+                    width: '100%'
+                  }}
+                  placeholder="--listen --port 8190"
+                />
+              </div>
             </div>
           </div>
         )}
 
-        {/* Delete Button (when expanded) */}
+        {/* Action Buttons (when expanded) */}
         {isExpanded && (
           <div style={{ margin: '0 12px 12px 12px' }}>
             <div style={{
               padding: '8px 12px',
               borderTop: '1px solid #444',
               display: 'flex',
-              justifyContent: 'center'
+              gap: '6px'
             }}>
+              <button
+                onClick={handleSaveSettings}
+                style={{
+                  padding: '4px 14px',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  fontSize: '12px',
+                  fontWeight: '500',
+                  backgroundColor: hasUnsavedChanges ? '#4a7c4a' : '#666',
+                  flex: '1',
+                  opacity: hasUnsavedChanges ? 1 : 0.6
+                }}
+                className="distributed-button"
+                disabled={!hasUnsavedChanges}
+              >
+                Save
+              </button>
+              <button
+                onClick={handleCancelSettings}
+                style={{
+                  padding: '4px 14px',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  fontSize: '12px',
+                  fontWeight: '500',
+                  backgroundColor: hasUnsavedChanges ? '#555' : '#666',
+                  flex: '1',
+                  opacity: hasUnsavedChanges ? 1 : 0.6
+                }}
+                className="distributed-button"
+                disabled={!hasUnsavedChanges}
+              >
+                Cancel
+              </button>
               <button
                 onClick={() => onDelete?.(worker.id)}
                 style={{
@@ -376,13 +465,6 @@ export const WorkerCard: React.FC<WorkerCardProps> = ({
         )}
       </div>
 
-      {/* Worker Log Modal */}
-      <WorkerLogModal
-        isOpen={showLogModal}
-        workerId={worker.id}
-        workerName={worker.name}
-        onClose={() => setShowLogModal(false)}
-      />
     </div>
   );
 };

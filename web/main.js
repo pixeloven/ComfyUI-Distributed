@@ -400,7 +400,9 @@ class DistributedExtension {
         // Assume caller ensured enabled; proceed with check
         const url = this.getWorkerUrl(worker, '/prompt');
         const statusDot = document.getElementById(`status-${worker.id}`);
-        
+
+        console.log(`[Legacy] Checking status for ${worker.name} at: ${url}`);
+
         try {
             // Combine timeout with abort controller signal
             const timeoutSignal = AbortSignal.timeout(TIMEOUTS.STATUS_CHECK);
@@ -418,14 +420,16 @@ class DistributedExtension {
                 const data = await response.json();
                 const queueRemaining = data.exec_info?.queue_remaining || 0;
                 const isProcessing = queueRemaining > 0;
-                
+
+                console.log(`[Legacy] ${worker.name} status OK - queue: ${queueRemaining}, processing: ${isProcessing}`);
+
                 // Update status
                 this.state.setWorkerStatus(worker.id, {
                     online: true,
                     processing: isProcessing,
                     queueCount: queueRemaining
                 });
-                
+
                 // Update status dot based on processing state
                 if (isProcessing) {
                     this.ui.updateStatusDot(
@@ -444,6 +448,7 @@ class DistributedExtension {
                     this.clearLaunchingFlag(worker.id);
                 }
             } else {
+                console.log(`[Legacy] ${worker.name} status failed - HTTP ${response.status}`);
                 throw new Error(`HTTP ${response.status}`);
             }
         } catch (error) {
@@ -451,7 +456,9 @@ class DistributedExtension {
             if (error.name === 'AbortError') {
                 return;
             }
-            
+
+            console.log(`[Legacy] ${worker.name} status error:`, error.message);
+
             // Worker is offline or unreachable
             this.state.setWorkerStatus(worker.id, {
                 online: false,

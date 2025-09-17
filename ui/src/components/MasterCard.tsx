@@ -13,22 +13,15 @@ export const MasterCard: React.FC<MasterCardProps> = ({
   onSaveSettings
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
   const [editedMaster, setEditedMaster] = useState<Partial<MasterNode>>(master);
 
-  const handleSettingsToggle = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setIsExpanded(!isExpanded);
-  };
 
   const handleSaveSettings = () => {
     onSaveSettings?.(editedMaster);
-    setIsEditing(false);
   };
 
   const handleCancelSettings = () => {
     setEditedMaster(master);
-    setIsEditing(false);
   };
 
   const cudaInfo = master.cuda_device !== undefined ? `CUDA ${master.cuda_device} • ` : '';
@@ -102,23 +95,24 @@ export const MasterCard: React.FC<MasterCardProps> = ({
               Master
             </div>
 
-            <button
+            {/* Dropdown arrow indicator */}
+            <span
               style={{
-                padding: '4px 8px',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                transition: 'all 0.2s',
                 fontSize: '12px',
-                fontWeight: '500',
-                backgroundColor: '#333'
+                color: '#888',
+                cursor: 'pointer',
+                transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)',
+                transition: 'transform 0.2s ease',
+                userSelect: 'none',
+                padding: '4px'
               }}
-              onClick={handleSettingsToggle}
-              className="distributed-button settings-btn"
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsExpanded(!isExpanded);
+              }}
             >
-              ⚙️
-            </button>
+              ▶
+            </span>
           </div>
         </div>
 
@@ -126,99 +120,35 @@ export const MasterCard: React.FC<MasterCardProps> = ({
         <div className={`worker-settings ${isExpanded ? 'expanded' : ''}`}>
           <div style={{
             margin: '0 12px',
-            padding: '0 12px',
+            padding: '12px',
             background: UI_COLORS.BACKGROUND_DARKER,
             borderRadius: '4px',
             border: `1px solid ${UI_COLORS.BACKGROUND_DARK}`
           }}>
-            {isEditing ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                  <label style={{ fontSize: '12px', color: UI_COLORS.SECONDARY_TEXT, fontWeight: '500' }}>
-                    Name:
-                  </label>
-                  <input
-                    type="text"
-                    value={editedMaster.name || ''}
-                    onChange={(e) => setEditedMaster({ ...editedMaster, name: e.target.value })}
-                    style={{
-                      padding: '6px 10px',
-                      background: UI_COLORS.BACKGROUND_DARK,
-                      border: `1px solid ${UI_COLORS.BORDER_DARK}`,
-                      color: 'white',
-                      fontSize: '12px',
-                      borderRadius: '4px',
-                      transition: 'border-color 0.2s'
-                    }}
-                  />
-                </div>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                  <label style={{ fontSize: '12px', color: UI_COLORS.SECONDARY_TEXT, fontWeight: '500' }}>
-                    CUDA Device:
-                  </label>
-                  <input
-                    type="number"
-                    value={editedMaster.cuda_device !== undefined ? editedMaster.cuda_device : ''}
-                    onChange={(e) => setEditedMaster({
-                      ...editedMaster,
-                      cuda_device: e.target.value ? parseInt(e.target.value) : undefined
-                    })}
-                    placeholder="Auto-detect"
-                    style={{
-                      padding: '6px 10px',
-                      background: UI_COLORS.BACKGROUND_DARK,
-                      border: `1px solid ${UI_COLORS.BORDER_DARK}`,
-                      color: 'white',
-                      fontSize: '12px',
-                      borderRadius: '4px'
-                    }}
-                  />
-                </div>
-
-                <div style={{ display: 'flex', gap: '6px', marginTop: '10px' }}>
-                  <button
-                    onClick={handleSaveSettings}
-                    style={{
-                      padding: '4px 14px',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '4px',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s',
-                      fontSize: '12px',
-                      fontWeight: '500',
-                      backgroundColor: '#4a7c4a',
-                      flex: '1'
-                    }}
-                    className="distributed-button"
-                  >
-                    Save
-                  </button>
-                  <button
-                    onClick={handleCancelSettings}
-                    style={{
-                      padding: '4px 14px',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '4px',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s',
-                      fontSize: '12px',
-                      fontWeight: '500',
-                      backgroundColor: '#555',
-                      flex: '1'
-                    }}
-                    className="distributed-button"
-                  >
-                    Cancel
-                  </button>
-                </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                <label style={{ fontSize: '12px', color: UI_COLORS.SECONDARY_TEXT, fontWeight: '500' }}>
+                  Name:
+                </label>
+                <input
+                  type="text"
+                  value={editedMaster.name || ''}
+                  onChange={(e) => setEditedMaster({ ...editedMaster, name: e.target.value })}
+                  style={{
+                    padding: '6px 10px',
+                    background: UI_COLORS.BACKGROUND_DARK,
+                    border: `1px solid ${UI_COLORS.BORDER_DARK}`,
+                    color: 'white',
+                    fontSize: '12px',
+                    borderRadius: '4px',
+                    transition: 'border-color 0.2s'
+                  }}
+                />
               </div>
-            ) : (
-              <div style={{ display: 'flex', gap: '6px', alignItems: 'stretch', width: '100%' }}>
+
+              <div style={{ display: 'flex', gap: '6px', marginTop: '10px' }}>
                 <button
-                  onClick={() => setIsEditing(true)}
+                  onClick={handleSaveSettings}
                   style={{
                     padding: '4px 14px',
                     color: 'white',
@@ -228,15 +158,33 @@ export const MasterCard: React.FC<MasterCardProps> = ({
                     transition: 'all 0.2s',
                     fontSize: '12px',
                     fontWeight: '500',
-                    backgroundColor: '#333',
+                    backgroundColor: '#4a7c4a',
                     flex: '1'
                   }}
                   className="distributed-button"
                 >
-                  Edit Master Settings
+                  Save
+                </button>
+                <button
+                  onClick={handleCancelSettings}
+                  style={{
+                    padding: '4px 14px',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                    fontSize: '12px',
+                    fontWeight: '500',
+                    backgroundColor: '#555',
+                    flex: '1'
+                  }}
+                  className="distributed-button"
+                >
+                  Cancel
                 </button>
               </div>
-            )}
+            </div>
           </div>
         </div>
       </div>
