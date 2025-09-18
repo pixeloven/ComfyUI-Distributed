@@ -1,15 +1,17 @@
-import { useEffect, useState } from 'react';
-import { useAppStore } from '@/stores/appStore';
-import { createApiClient } from '@/services/apiClient';
-import { ToastService } from '@/services/toastService';
-import { WorkerCard } from './WorkerCard';
-import { MasterCard } from './MasterCard';
-import { SettingsPanel } from './SettingsPanel';
-import { UI_COLORS } from '@/utils/constants';
-import type { Worker, WorkerStatus } from '@/types';
+import { useEffect, useState } from 'react'
 
-const apiClient = createApiClient(window.location.origin);
-const toastService = ToastService.getInstance();
+import { createApiClient } from '@/services/apiClient'
+import { ToastService } from '@/services/toastService'
+import { useAppStore } from '@/stores/appStore'
+import type { Worker, WorkerStatus } from '@/types'
+import { UI_COLORS } from '@/utils/constants'
+
+import { MasterCard } from './MasterCard'
+import { SettingsPanel } from './SettingsPanel'
+import { WorkerCard } from './WorkerCard'
+
+const apiClient = createApiClient(window.location.origin)
+const toastService = ToastService.getInstance()
 
 export function WorkerManagementPanel() {
   const {
@@ -23,44 +25,46 @@ export function WorkerManagementPanel() {
     removeWorker,
     updateMaster,
     setWorkerStatus,
-    isDebugEnabled,
-  } = useAppStore();
-  const [isLoading, setIsLoading] = useState(true);
-  const [interruptLoading, setInterruptLoading] = useState(false);
-  const [clearMemoryLoading, setClearMemoryLoading] = useState(false);
+    isDebugEnabled
+  } = useAppStore()
+  const [isLoading, setIsLoading] = useState(true)
+  const [interruptLoading, setInterruptLoading] = useState(false)
+  const [clearMemoryLoading, setClearMemoryLoading] = useState(false)
 
   const debugLog = (message: string, ...args: any[]) => {
     if (isDebugEnabled()) {
-      console.log(message, ...args);
+      console.log(message, ...args)
     }
-  };
+  }
 
   useEffect(() => {
-    debugLog('[React] WorkerManagementPanel useEffect running');
-    loadConfiguration();
-  }, []);
+    debugLog('[React] WorkerManagementPanel useEffect running')
+    void loadConfiguration()
+  }, [])
 
   useEffect(() => {
     if (workers.length > 0) {
-      debugLog('[React] Starting status check interval');
-      const interval = setInterval(checkStatuses, 2000);
-      return () => clearInterval(interval);
+      debugLog('[React] Starting status check interval')
+      const interval = setInterval(checkStatuses, 2000)
+      return () => clearInterval(interval)
     }
-  }, [workers]);
+  }, [workers])
 
   const loadConfiguration = async () => {
-    debugLog('[React] Loading configuration...');
+    debugLog('[React] Loading configuration...')
     try {
-      const configResponse = await apiClient.getConfig();
-      debugLog('[React] Config response:', configResponse);
+      const configResponse = await apiClient.getConfig()
+      debugLog('[React] Config response:', configResponse)
 
       // Convert to our Config type
       const config = {
         master: configResponse.master,
-        workers: configResponse.workers ? Object.values(configResponse.workers) : [],
-        settings: configResponse.settings,
-      };
-      setConfig(config);
+        workers: configResponse.workers
+          ? Object.values(configResponse.workers)
+          : [],
+        settings: configResponse.settings
+      }
+      setConfig(config)
 
       // Load master node
       if (config.master) {
@@ -69,8 +73,8 @@ export function WorkerManagementPanel() {
           name: config.master.name || 'Master',
           cuda_device: config.master.cuda_device,
           port: parseInt(window.location.port) || 8188,
-          status: 'online',
-        });
+          status: 'online'
+        })
       }
 
       // Load workers
@@ -82,223 +86,243 @@ export function WorkerManagementPanel() {
           port: worker.port || 8189,
           enabled: worker.enabled !== false,
           cuda_device: worker.cuda_device,
-          type: worker.type || (worker.host === 'localhost' ? 'local' : 'remote'),
+          type:
+            worker.type || (worker.host === 'localhost' ? 'local' : 'remote'),
           connection: worker.connection,
-          status: worker.enabled ? WorkerStatus.OFFLINE : WorkerStatus.DISABLED,
-        }));
-        setWorkers(workersArray);
+          status: worker.enabled ? WorkerStatus.OFFLINE : WorkerStatus.DISABLED
+        }))
+        setWorkers(workersArray)
       } else {
-        setWorkers([]);
+        setWorkers([])
       }
 
-      debugLog('[React] Configuration loaded successfully');
-      setIsLoading(false);
+      debugLog('[React] Configuration loaded successfully')
+      setIsLoading(false)
     } catch (error) {
-      debugLog('[React] Failed to load configuration:', error);
-      setIsLoading(false);
+      debugLog('[React] Failed to load configuration:', error)
+      setIsLoading(false)
     }
-  };
+  }
 
   const getWorkerUrl = (worker: any, endpoint = '') => {
-    const host = worker.host || window.location.hostname;
+    const host = worker.host || window.location.hostname
 
     // Cloud workers always use HTTPS
-    const isCloud = worker.type === 'cloud';
+    const isCloud = worker.type === 'cloud'
 
     // Detect if we're running on Runpod (for local workers on Runpod infrastructure)
-    const isRunpodProxy = host.endsWith('.proxy.runpod.net');
+    const isRunpodProxy = host.endsWith('.proxy.runpod.net')
 
     // For local workers on Runpod, construct the port-specific proxy URL
-    let finalHost = host;
+    let finalHost = host
     if (!worker.host && isRunpodProxy) {
-      const match = host.match(/^(.*)\.proxy\.runpod\.net$/);
+      const match = host.match(/^(.*)\.proxy\.runpod\.net$/)
       if (match) {
-        const podId = match[1];
-        const domain = 'proxy.runpod.net';
-        finalHost = `${podId}-${worker.port}.${domain}`;
+        const podId = match[1]
+        const domain = 'proxy.runpod.net'
+        finalHost = `${podId}-${worker.port}.${domain}`
       } else {
-        debugLog(`Failed to parse Runpod proxy host: ${host}`);
+        debugLog(`Failed to parse Runpod proxy host: ${host}`)
       }
     }
 
     // If worker has a connection string, use it directly
     if (worker.connection) {
       // Check if connection already has protocol
-      if (worker.connection.startsWith('http://') || worker.connection.startsWith('https://')) {
-        return worker.connection + endpoint;
+      if (
+        worker.connection.startsWith('http://') ||
+        worker.connection.startsWith('https://')
+      ) {
+        return worker.connection + endpoint
       } else {
         // Add protocol based on worker type and port
-        const useHttps = isCloud || isRunpodProxy || worker.port === 443;
-        const protocol = useHttps ? 'https' : 'http';
-        return `${protocol}://${worker.connection}${endpoint}`;
+        const useHttps = isCloud || isRunpodProxy || worker.port === 443
+        const protocol = useHttps ? 'https' : 'http'
+        return `${protocol}://${worker.connection}${endpoint}`
       }
     }
 
     // Determine protocol: HTTPS for cloud, Runpod proxies, or port 443
-    const useHttps = isCloud || isRunpodProxy || worker.port === 443;
-    const protocol = useHttps ? 'https' : 'http';
+    const useHttps = isCloud || isRunpodProxy || worker.port === 443
+    const protocol = useHttps ? 'https' : 'http'
 
     // Only add port if non-standard
-    const defaultPort = useHttps ? 443 : 80;
-    const needsPort = !isRunpodProxy && worker.port !== defaultPort;
-    const portStr = needsPort ? `:${worker.port}` : '';
+    const defaultPort = useHttps ? 443 : 80
+    const needsPort = !isRunpodProxy && worker.port !== defaultPort
+    const portStr = needsPort ? `:${worker.port}` : ''
 
-    return `${protocol}://${finalHost}${portStr}${endpoint}`;
-  };
+    return `${protocol}://${finalHost}${portStr}${endpoint}`
+  }
 
   const checkStatuses = async () => {
-    debugLog(`[React] checkStatuses running with ${workers.length} workers`);
+    debugLog(`[React] checkStatuses running with ${workers.length} workers`)
     // Check worker statuses
     for (const worker of workers) {
       if (worker.enabled) {
         try {
           // Use /prompt endpoint like legacy UI
-          const url = getWorkerUrl(worker, '/prompt');
-          debugLog(`[React] Checking status for ${worker.name} at: ${url}`);
+          const url = getWorkerUrl(worker, '/prompt')
+          debugLog(`[React] Checking status for ${worker.name} at: ${url}`)
 
           const response = await fetch(url, {
             method: 'GET',
             mode: 'cors',
-            signal: AbortSignal.timeout(1200), // Match legacy timeout
-          });
+            signal: AbortSignal.timeout(1200) // Match legacy timeout
+          })
 
           if (response.ok) {
-            const data = await response.json();
-            const queueRemaining = data.exec_info?.queue_remaining || 0;
-            const isProcessing = queueRemaining > 0;
+            const data = await response.json()
+            const queueRemaining = data.exec_info?.queue_remaining || 0
+            const isProcessing = queueRemaining > 0
 
             debugLog(
               `[React] ${worker.name} status OK - queue: ${queueRemaining}, processing: ${isProcessing}`
-            );
+            )
             setWorkerStatus(
               worker.id,
               isProcessing ? WorkerStatus.PROCESSING : WorkerStatus.ONLINE
-            );
+            )
           } else {
-            debugLog(`[React] ${worker.name} status failed - HTTP ${response.status}`);
-            setWorkerStatus(worker.id, WorkerStatus.OFFLINE);
+            debugLog(
+              `[React] ${worker.name} status failed - HTTP ${response.status}`
+            )
+            setWorkerStatus(worker.id, WorkerStatus.OFFLINE)
           }
         } catch (error) {
           debugLog(
             `[React] ${worker.name} status error:`,
             error instanceof Error ? error.message : String(error)
-          );
-          setWorkerStatus(worker.id, WorkerStatus.OFFLINE);
+          )
+          setWorkerStatus(worker.id, WorkerStatus.OFFLINE)
         }
       }
     }
-  };
+  }
 
   const handleToggleWorker = (workerId: string, enabled: boolean) => {
     updateWorker(workerId, {
       enabled,
-      status: enabled ? WorkerStatus.OFFLINE : WorkerStatus.DISABLED,
-    });
-  };
+      status: enabled ? WorkerStatus.OFFLINE : WorkerStatus.DISABLED
+    })
+  }
 
   const handleDeleteWorker = async (workerId: string) => {
     try {
-      await apiClient.deleteWorker(workerId);
-      removeWorker(workerId);
+      await apiClient.deleteWorker(workerId)
+      removeWorker(workerId)
     } catch (error) {
-      console.error('Failed to delete worker:', error);
+      console.error('Failed to delete worker:', error)
     }
-  };
+  }
 
   const handleSaveWorkerSettings = async (workerId: string, settings: any) => {
     try {
-      await apiClient.updateWorker(workerId, settings);
-      updateWorker(workerId, settings);
+      await apiClient.updateWorker(workerId, settings)
+      updateWorker(workerId, settings)
     } catch (error) {
-      console.error('Failed to save worker settings:', error);
+      console.error('Failed to save worker settings:', error)
     }
-  };
+  }
 
   const handleSaveMasterSettings = async (settings: any) => {
     try {
-      await apiClient.updateMaster(settings);
-      updateMaster(settings);
+      await apiClient.updateMaster(settings)
+      updateMaster(settings)
     } catch (error) {
-      console.error('Failed to save master settings:', error);
+      console.error('Failed to save master settings:', error)
     }
-  };
+  }
 
   const performWorkerOperation = async (
     endpoint: string,
     setLoading: (loading: boolean) => void,
     operationName: string
   ) => {
-    const enabledWorkers = workers.filter(worker => worker.enabled);
+    const enabledWorkers = workers.filter((worker) => worker.enabled)
 
     if (enabledWorkers.length === 0) {
-      toastService.warn('No Workers', 'No enabled workers available for this operation');
-      return;
+      toastService.warn(
+        'No Workers',
+        'No enabled workers available for this operation'
+      )
+      return
     }
 
-    setLoading(true);
+    setLoading(true)
 
     const results = await Promise.allSettled(
-      enabledWorkers.map(async worker => {
-        const url = getWorkerUrl(worker, endpoint);
+      enabledWorkers.map(async (worker) => {
+        const url = getWorkerUrl(worker, endpoint)
 
         try {
           const response = await fetch(url, {
             method: 'POST',
             mode: 'cors',
             headers: { 'Content-Type': 'application/json' },
-            signal: AbortSignal.timeout(10000), // 10 second timeout
-          });
+            signal: AbortSignal.timeout(10000) // 10 second timeout
+          })
 
           if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`)
           }
 
-          console.log(`${operationName} successful on worker ${worker.name}`);
-          return { worker, success: true };
+          console.log(`${operationName} successful on worker ${worker.name}`)
+          return { worker, success: true }
         } catch (error) {
-          console.error(`${operationName} failed on worker ${worker.name}:`, error);
-          return { worker, success: false, error };
+          console.error(
+            `${operationName} failed on worker ${worker.name}:`,
+            error
+          )
+          return { worker, success: false, error }
         }
       })
-    );
+    )
 
     const failures = results
-      .filter(result => result.status === 'rejected' || !result.value.success)
-      .map(result => (result.status === 'fulfilled' ? result.value.worker.name : 'Unknown worker'));
+      .filter((result) => result.status === 'rejected' || !result.value.success)
+      .map((result) =>
+        result.status === 'fulfilled'
+          ? result.value.worker.name
+          : 'Unknown worker'
+      )
 
-    const successCount = enabledWorkers.length - failures.length;
+    const successCount = enabledWorkers.length - failures.length
 
     toastService.workerOperationResult(
       operationName,
       successCount,
       enabledWorkers.length,
       failures
-    );
+    )
 
-    setLoading(false);
-  };
+    setLoading(false)
+  }
 
   const handleInterruptWorkers = () => {
-    performWorkerOperation('/interrupt', setInterruptLoading, 'Interrupt operation');
-  };
+    void performWorkerOperation(
+      '/interrupt',
+      setInterruptLoading,
+      'Interrupt operation'
+    )
+  }
 
   const handleClearMemory = () => {
-    performWorkerOperation(
+    void performWorkerOperation(
       '/distributed/clear_memory',
       setClearMemoryLoading,
       'Clear memory operation'
-    );
-  };
+    )
+  }
 
   const handleAddWorker = async () => {
     try {
       // Auto-generate worker settings like legacy UI
-      const workerCount = workers.length;
-      const masterPort = master?.port || 8188;
-      const newPort = masterPort + 1 + workerCount;
+      const workerCount = workers.length
+      const masterPort = master?.port || 8188
+      const newPort = masterPort + 1 + workerCount
 
       // Generate unique worker ID
-      const workerId = `localhost:${newPort}`;
+      const workerId = `localhost:${newPort}`
 
       // Create new worker with auto-generated settings (matching legacy behavior)
       const newWorker: Worker = {
@@ -311,8 +335,8 @@ export function WorkerManagementPanel() {
         connection: `localhost:${newPort}`,
         status: WorkerStatus.OFFLINE,
         cuda_device: undefined, // Auto-detect like legacy
-        extra_args: '--listen',
-      };
+        extra_args: '--listen'
+      }
 
       // Create worker data for API
       const workerData = {
@@ -324,24 +348,24 @@ export function WorkerManagementPanel() {
         type: newWorker.type,
         enabled: newWorker.enabled,
         cuda_device: newWorker.cuda_device,
-        extra_args: newWorker.extra_args,
-      };
+        extra_args: newWorker.extra_args
+      }
 
       // Add to backend
-      await apiClient.updateWorker(workerId, workerData);
+      await apiClient.updateWorker(workerId, workerData)
 
       // Add to local state
-      addWorker(newWorker);
+      addWorker(newWorker)
 
-      toastService.success('Worker Added', `${newWorker.name} has been created`);
+      toastService.success('Worker Added', `${newWorker.name} has been created`)
     } catch (error) {
-      console.error('Failed to add worker:', error);
+      console.error('Failed to add worker:', error)
       toastService.error(
         'Failed to Add Worker',
         error instanceof Error ? error.message : 'Unknown error occurred'
-      );
+      )
     }
-  };
+  }
 
   if (isLoading) {
     return (
@@ -351,23 +375,28 @@ export function WorkerManagementPanel() {
           alignItems: 'center',
           justifyContent: 'center',
           height: 'calc(100vh - 100px)',
-          color: UI_COLORS.MUTED_TEXT,
+          color: UI_COLORS.MUTED_TEXT
         }}
       >
-        <svg width='24' height='24' viewBox='0 0 24 24' style={{ color: UI_COLORS.MUTED_TEXT }}>
+        <svg
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          style={{ color: UI_COLORS.MUTED_TEXT }}
+        >
           <circle
-            cx='12'
-            cy='12'
-            r='10'
-            fill='none'
-            stroke='currentColor'
-            strokeWidth='2'
-            strokeLinecap='round'
-            strokeDasharray='40 40'
+            cx="12"
+            cy="12"
+            r="10"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeDasharray="40 40"
           />
         </svg>
       </div>
-    );
+    )
   }
 
   return (
@@ -375,7 +404,7 @@ export function WorkerManagementPanel() {
       style={{
         display: 'flex',
         flexDirection: 'column',
-        height: 'calc(100% - 32px)',
+        height: 'calc(100% - 32px)'
       }}
     >
       {/* Main container */}
@@ -384,18 +413,23 @@ export function WorkerManagementPanel() {
           padding: '15px',
           display: 'flex',
           flexDirection: 'column',
-          height: '100%',
+          height: '100%'
         }}
       >
         {/* Master Node Section */}
-        {master && <MasterCard master={master} onSaveSettings={handleSaveMasterSettings} />}
+        {master && (
+          <MasterCard
+            master={master}
+            onSaveSettings={handleSaveMasterSettings}
+          />
+        )}
 
         {/* Workers Section */}
         <div
           style={{
             flex: '1',
             overflowY: 'auto',
-            marginBottom: '15px',
+            marginBottom: '15px'
           }}
         >
           {workers.length === 0 ? (
@@ -408,23 +442,23 @@ export function WorkerManagementPanel() {
                 borderRadius: '6px',
                 background: 'rgba(255, 255, 255, 0.02)',
                 cursor: 'pointer',
-                transition: 'all 0.2s ease',
+                transition: 'all 0.2s ease'
               }}
               onClick={handleAddWorker}
-              onMouseEnter={e => {
-                e.currentTarget.style.borderColor = '#007acc';
-                e.currentTarget.style.color = '#fff';
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = '#007acc'
+                e.currentTarget.style.color = '#fff'
               }}
-              onMouseLeave={e => {
-                e.currentTarget.style.borderColor = UI_COLORS.BORDER_LIGHT;
-                e.currentTarget.style.color = UI_COLORS.MUTED_TEXT;
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = UI_COLORS.BORDER_LIGHT
+                e.currentTarget.style.color = UI_COLORS.MUTED_TEXT
               }}
             >
               + Click here to add your first worker
             </div>
           ) : (
             <>
-              {workers.map(worker => (
+              {workers.map((worker) => (
                 <WorkerCard
                   key={worker.id}
                   worker={worker}
@@ -445,18 +479,18 @@ export function WorkerManagementPanel() {
                   background: 'rgba(255, 255, 255, 0.01)',
                   cursor: 'pointer',
                   marginTop: '8px',
-                  transition: 'all 0.2s ease',
+                  transition: 'all 0.2s ease'
                 }}
                 onClick={handleAddWorker}
-                onMouseEnter={e => {
-                  e.currentTarget.style.borderColor = '#007acc';
-                  e.currentTarget.style.color = '#fff';
-                  e.currentTarget.style.background = 'rgba(0, 122, 204, 0.1)';
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = '#007acc'
+                  e.currentTarget.style.color = '#fff'
+                  e.currentTarget.style.background = 'rgba(0, 122, 204, 0.1)'
                 }}
-                onMouseLeave={e => {
-                  e.currentTarget.style.borderColor = UI_COLORS.BORDER_LIGHT;
-                  e.currentTarget.style.color = UI_COLORS.MUTED_TEXT;
-                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.01)';
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = UI_COLORS.BORDER_LIGHT
+                  e.currentTarget.style.color = UI_COLORS.MUTED_TEXT
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.01)'
                 }}
               >
                 + Add New Worker
@@ -470,7 +504,7 @@ export function WorkerManagementPanel() {
           style={{
             paddingTop: '10px',
             marginBottom: '15px',
-            borderTop: '1px solid #444',
+            borderTop: '1px solid #444'
           }}
         >
           <div style={{ display: 'flex', gap: '8px' }}>
@@ -485,12 +519,15 @@ export function WorkerManagementPanel() {
                 cursor: 'pointer',
                 fontSize: '12px',
                 fontWeight: '500',
-                transition: 'all 0.2s ease',
+                transition: 'all 0.2s ease'
               }}
               onClick={handleClearMemory}
-              disabled={clearMemoryLoading || workers.filter(w => w.enabled).length === 0}
-              title='Clear VRAM on all enabled worker GPUs (not master)'
-              className='distributed-button'
+              disabled={
+                clearMemoryLoading ||
+                workers.filter((w) => w.enabled).length === 0
+              }
+              title="Clear VRAM on all enabled worker GPUs (not master)"
+              className="distributed-button"
             >
               {clearMemoryLoading ? 'Clearing...' : 'Clear Worker VRAM'}
             </button>
@@ -506,12 +543,15 @@ export function WorkerManagementPanel() {
                 cursor: 'pointer',
                 fontSize: '12px',
                 fontWeight: '500',
-                transition: 'all 0.2s ease',
+                transition: 'all 0.2s ease'
               }}
               onClick={handleInterruptWorkers}
-              disabled={interruptLoading || workers.filter(w => w.enabled).length === 0}
-              title='Cancel/interrupt execution on all enabled worker GPUs'
-              className='distributed-button'
+              disabled={
+                interruptLoading ||
+                workers.filter((w) => w.enabled).length === 0
+              }
+              title="Cancel/interrupt execution on all enabled worker GPUs"
+              className="distributed-button"
             >
               {interruptLoading ? 'Interrupting...' : 'Interrupt Workers'}
             </button>
@@ -522,5 +562,5 @@ export function WorkerManagementPanel() {
         <SettingsPanel />
       </div>
     </div>
-  );
+  )
 }

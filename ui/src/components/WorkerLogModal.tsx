@@ -1,145 +1,149 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react'
 
 interface WorkerLogModalProps {
-  isOpen: boolean;
-  workerId: string;
-  workerName: string;
-  onClose: () => void;
+  isOpen: boolean
+  workerId: string
+  workerName: string
+  onClose: () => void
 }
 
 interface LogData {
-  content: string;
-  log_file: string;
-  file_size: number;
-  lines_shown: number;
-  truncated: boolean;
+  content: string
+  log_file: string
+  file_size: number
+  lines_shown: number
+  truncated: boolean
 }
 
 export const WorkerLogModal: React.FC<WorkerLogModalProps> = ({
   isOpen,
   workerId,
   workerName,
-  onClose,
+  onClose
 }) => {
-  const [logData, setLogData] = useState<LogData | null>(null);
-  const [autoRefresh, setAutoRefresh] = useState(true);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const logContentRef = useRef<HTMLDivElement>(null);
-  const autoRefreshIntervalRef = useRef<number | null>(null);
+  const [logData, setLogData] = useState<LogData | null>(null)
+  const [autoRefresh, setAutoRefresh] = useState(true)
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const logContentRef = useRef<HTMLDivElement>(null)
+  const autoRefreshIntervalRef = useRef<number | null>(null)
 
   // Load initial log data
   useEffect(() => {
     if (isOpen && workerId) {
-      loadLogData();
+      void loadLogData()
     }
-  }, [isOpen, workerId]);
+  }, [isOpen, workerId])
 
   // Handle auto-refresh
   useEffect(() => {
     if (isOpen && autoRefresh) {
-      startAutoRefresh();
+      startAutoRefresh()
     } else {
-      stopAutoRefresh();
+      stopAutoRefresh()
     }
 
-    return () => stopAutoRefresh();
-  }, [isOpen, autoRefresh, workerId]);
+    return () => stopAutoRefresh()
+  }, [isOpen, autoRefresh, workerId])
 
   // Handle escape key
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && isOpen) {
-        onClose();
+        onClose()
       }
-    };
+    }
 
     if (isOpen) {
-      document.addEventListener('keydown', handleEscape);
-      return () => document.removeEventListener('keydown', handleEscape);
+      document.addEventListener('keydown', handleEscape)
+      return () => document.removeEventListener('keydown', handleEscape)
     }
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose])
 
   const loadLogData = async (silent = false) => {
     if (!silent) {
-      setIsLoading(true);
-      setError(null);
+      setIsLoading(true)
+      setError(null)
     }
 
     try {
-      const response = await fetch(`/distributed/worker_log/${workerId}?lines=1000`);
+      const response = await fetch(
+        `/distributed/worker_log/${workerId}?lines=1000`
+      )
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
       }
 
-      const data: LogData = await response.json();
+      const data: LogData = await response.json()
 
       // Check if we should auto-scroll (user is at bottom)
       const shouldAutoScroll = logContentRef.current
-        ? logContentRef.current.scrollTop + logContentRef.current.clientHeight >=
+        ? logContentRef.current.scrollTop +
+            logContentRef.current.clientHeight >=
           logContentRef.current.scrollHeight - 50
-        : true;
+        : true
 
-      setLogData(data);
+      setLogData(data)
 
       // Auto-scroll to bottom if user was already there
       if (shouldAutoScroll) {
         setTimeout(() => {
           if (logContentRef.current) {
-            logContentRef.current.scrollTop = logContentRef.current.scrollHeight;
+            logContentRef.current.scrollTop = logContentRef.current.scrollHeight
           }
-        }, 0);
+        }, 0)
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error'
       if (!silent) {
-        setError(`Failed to load log: ${errorMessage}`);
+        setError(`Failed to load log: ${errorMessage}`)
       }
-      console.error('Failed to load worker log:', error);
+      console.error('Failed to load worker log:', error)
     } finally {
       if (!silent) {
-        setIsLoading(false);
+        setIsLoading(false)
       }
     }
-  };
+  }
 
   const startAutoRefresh = () => {
-    stopAutoRefresh();
+    stopAutoRefresh()
     autoRefreshIntervalRef.current = window.setInterval(() => {
-      loadLogData(true); // Silent refresh
-    }, 2000);
-  };
+      void loadLogData(true) // Silent refresh
+    }, 2000)
+  }
 
   const stopAutoRefresh = () => {
     if (autoRefreshIntervalRef.current) {
-      clearInterval(autoRefreshIntervalRef.current);
-      autoRefreshIntervalRef.current = null;
+      clearInterval(autoRefreshIntervalRef.current)
+      autoRefreshIntervalRef.current = null
     }
-  };
+  }
 
   const handleRefresh = () => {
-    loadLogData();
-  };
+    void loadLogData()
+  }
 
   const handleAutoRefreshToggle = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setAutoRefresh(e.target.checked);
-  };
+    setAutoRefresh(e.target.checked)
+  }
 
   const handleModalClick = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget) {
-      onClose();
+      onClose()
     }
-  };
+  }
 
   const formatFileSize = (bytes: number): string => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  };
+    if (bytes === 0) return '0 Bytes'
+    const k = 1024
+    const sizes = ['Bytes', 'KB', 'MB', 'GB']
+    const i = Math.floor(Math.log(bytes) / Math.log(k))
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
+  }
 
-  if (!isOpen) return null;
+  if (!isOpen) return null
 
   return (
     <div
@@ -154,7 +158,7 @@ export const WorkerLogModal: React.FC<WorkerLogModalProps> = ({
         alignItems: 'center',
         justifyContent: 'center',
         zIndex: 10000,
-        padding: '20px',
+        padding: '20px'
       }}
       onClick={handleModalClick}
     >
@@ -168,9 +172,9 @@ export const WorkerLogModal: React.FC<WorkerLogModalProps> = ({
           height: '600px',
           display: 'flex',
           flexDirection: 'column',
-          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.5)',
+          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.5)'
         }}
-        onClick={e => e.stopPropagation()}
+        onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div
@@ -179,10 +183,12 @@ export const WorkerLogModal: React.FC<WorkerLogModalProps> = ({
             borderBottom: '1px solid #444',
             display: 'flex',
             justifyContent: 'space-between',
-            alignItems: 'center',
+            alignItems: 'center'
           }}
         >
-          <h3 style={{ margin: 0, color: '#fff', fontSize: '16px' }}>{workerName} - Log Viewer</h3>
+          <h3 style={{ margin: 0, color: '#fff', fontSize: '16px' }}>
+            {workerName} - Log Viewer
+          </h3>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             {/* Auto-refresh toggle */}
@@ -193,11 +199,11 @@ export const WorkerLogModal: React.FC<WorkerLogModalProps> = ({
                 gap: '6px',
                 fontSize: '12px',
                 color: '#ccc',
-                cursor: 'pointer',
+                cursor: 'pointer'
               }}
             >
               <input
-                type='checkbox'
+                type="checkbox"
                 checked={autoRefresh}
                 onChange={handleAutoRefreshToggle}
                 style={{ cursor: 'pointer' }}
@@ -217,7 +223,7 @@ export const WorkerLogModal: React.FC<WorkerLogModalProps> = ({
                 borderRadius: '4px',
                 cursor: 'pointer',
                 fontSize: '12px',
-                opacity: isLoading ? 0.6 : 1,
+                opacity: isLoading ? 0.6 : 1
               }}
             >
               {isLoading ? 'Loading...' : 'Refresh'}
@@ -234,7 +240,7 @@ export const WorkerLogModal: React.FC<WorkerLogModalProps> = ({
                 borderRadius: '4px',
                 cursor: 'pointer',
                 fontSize: '16px',
-                lineHeight: '1',
+                lineHeight: '1'
               }}
             >
               ✕
@@ -255,15 +261,21 @@ export const WorkerLogModal: React.FC<WorkerLogModalProps> = ({
             fontSize: '12px',
             lineHeight: '1.4',
             whiteSpace: 'pre-wrap',
-            wordWrap: 'break-word',
+            wordWrap: 'break-word'
           }}
         >
           {error ? (
-            <div style={{ color: '#ff6b6b', textAlign: 'center', padding: '20px' }}>{error}</div>
+            <div
+              style={{ color: '#ff6b6b', textAlign: 'center', padding: '20px' }}
+            >
+              {error}
+            </div>
           ) : logData ? (
             logData.content || 'Log file is empty'
           ) : (
-            <div style={{ color: '#888', textAlign: 'center', padding: '20px' }}>
+            <div
+              style={{ color: '#888', textAlign: 'center', padding: '20px' }}
+            >
               Loading log data...
             </div>
           )}
@@ -277,19 +289,20 @@ export const WorkerLogModal: React.FC<WorkerLogModalProps> = ({
               borderTop: '1px solid #444',
               fontSize: '11px',
               color: '#888',
-              backgroundColor: '#333',
+              backgroundColor: '#333'
             }}
           >
             Log file: {logData.log_file}
             {logData.truncated && (
               <span>
                 {' '}
-                (showing last {logData.lines_shown} lines of {formatFileSize(logData.file_size)})
+                (showing last {logData.lines_shown} lines of{' '}
+                {formatFileSize(logData.file_size)})
               </span>
             )}
           </div>
         )}
       </div>
     </div>
-  );
-};
+  )
+}

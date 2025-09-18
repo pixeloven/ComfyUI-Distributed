@@ -11,15 +11,15 @@ export const BUTTON_STYLES = {
   stop: 'background-color: #7c4a4a;',
   log: 'background-color: #685434;',
   clearMemory: 'background-color: #555; padding: 6px 14px;',
-  interrupt: 'background-color: #555; padding: 6px 14px;',
-} as const;
+  interrupt: 'background-color: #555; padding: 6px 14px;'
+} as const
 
 export const STATUS_COLORS = {
   DISABLED_GRAY: '#666',
   OFFLINE_RED: '#c04c4c',
   ONLINE_GREEN: '#3ca03c',
-  PROCESSING_YELLOW: '#f0ad4e',
-} as const;
+  PROCESSING_YELLOW: '#f0ad4e'
+} as const
 
 export const UI_COLORS = {
   MUTED_TEXT: '#888',
@@ -30,8 +30,8 @@ export const UI_COLORS = {
   BACKGROUND_DARK: '#2a2a2a',
   BACKGROUND_DARKER: '#1e1e1e',
   ICON_COLOR: '#666',
-  ACCENT_COLOR: '#777',
-} as const;
+  ACCENT_COLOR: '#777'
+} as const
 
 export const UI_STYLES = {
   statusDot:
@@ -41,7 +41,8 @@ export const UI_STYLES = {
   formLabel: 'font-size: 12px; color: #ccc; font-weight: 500;',
   formInput:
     'padding: 6px 10px; background: #2a2a2a; border: 1px solid #444; color: white; font-size: 12px; border-radius: 4px; transition: border-color 0.2s;',
-  cardBase: 'margin-bottom: 12px; border-radius: 6px; overflow: hidden; display: flex;',
+  cardBase:
+    'margin-bottom: 12px; border-radius: 6px; overflow: hidden; display: flex;',
   workerCard:
     'margin-bottom: 12px; border-radius: 6px; overflow: hidden; display: flex; background: #2a2a2a;',
   cardBlueprint:
@@ -54,7 +55,8 @@ export const UI_STYLES = {
   contentColumn:
     'flex: 1; display: flex; flex-direction: column; transition: background-color 0.2s ease;',
   iconColumn: 'width: 44px; flex-shrink: 0; font-size: 20px; color: #666;',
-  infoRow: 'display: flex; align-items: center; padding: 12px; cursor: pointer; min-height: 64px;',
+  infoRow:
+    'display: flex; align-items: center; padding: 12px; cursor: pointer; min-height: 64px;',
   workerContent: 'display: flex; align-items: center; gap: 10px; flex: 1;',
   buttonGroup: 'display: flex; gap: 4px; margin-top: 10px;',
   settingsForm: 'display: flex; flex-direction: column; gap: 10px;',
@@ -62,14 +64,15 @@ export const UI_STYLES = {
   formLabelClickable: 'font-size: 12px; color: #ccc; cursor: pointer;',
   settingsToggle:
     'display: flex; align-items: center; gap: 6px; padding: 4px 0; cursor: pointer; user-select: none;',
-  controlsWrapper: 'display: flex; gap: 6px; align-items: stretch; width: 100%;',
+  controlsWrapper:
+    'display: flex; gap: 6px; align-items: stretch; width: 100%;',
   settingsArrow:
     'font-size: 12px; color: #888; transition: all 0.2s ease; margin-left: auto; padding: 4px;',
   infoBox:
     'background-color: #333; color: #999; padding: 5px 14px; border-radius: 4px; font-size: 11px; text-align: center; flex: 1; font-weight: 500;',
   workerSettings:
-    'margin: 0 12px; padding: 0 12px; background: #1e1e1e; border-radius: 4px; border: 1px solid #2a2a2a;',
-} as const;
+    'margin: 0 12px; padding: 0 12px; background: #1e1e1e; border-radius: 4px; border: 1px solid #2a2a2a;'
+} as const
 
 export const TIMEOUTS = {
   DEFAULT_FETCH: 5000,
@@ -84,8 +87,8 @@ export const TIMEOUTS = {
   POST_ACTION_DELAY: 500,
   STATUS_CHECK_DELAY: 100,
   LOG_REFRESH: 2000,
-  IMAGE_CACHE_CLEAR: 30000,
-} as const;
+  IMAGE_CACHE_CLEAR: 30000
+} as const
 
 export const PULSE_ANIMATION_CSS = `
   @keyframes pulse {
@@ -134,4 +137,4 @@ export const PULSE_ANIMATION_CSS = `
     opacity: 1;
     padding: 12px 0;
   }
-`;
+`

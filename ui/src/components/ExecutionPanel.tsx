@@ -1,101 +1,119 @@
-import React, { useState } from 'react';
-import { useAppStore } from '@/stores/appStore';
-import { ToastService } from '@/services/toastService';
-import { UI_STYLES, BUTTON_STYLES } from '@/utils/constants';
+import React, { useState } from 'react'
 
-const toastService = ToastService.getInstance();
+import { ToastService } from '@/services/toastService'
+import { useAppStore } from '@/stores/appStore'
+import { BUTTON_STYLES, UI_STYLES } from '@/utils/constants'
+
+const toastService = ToastService.getInstance()
 
 export function ExecutionPanel() {
-  const { executionState, workers, clearExecutionErrors } = useAppStore();
-  const selectedWorkers = workers.filter(worker => worker.enabled && worker.status === 'online');
-  const [interruptLoading, setInterruptLoading] = useState(false);
-  const [clearMemoryLoading, setClearMemoryLoading] = useState(false);
+  const { executionState, workers, clearExecutionErrors } = useAppStore()
+  const selectedWorkers = workers.filter(
+    (worker) => worker.enabled && worker.status === 'online'
+  )
+  const [interruptLoading, setInterruptLoading] = useState(false)
+  const [clearMemoryLoading, setClearMemoryLoading] = useState(false)
 
   const parseStyle = (styleString: string): React.CSSProperties => {
-    const style: React.CSSProperties = {};
-    if (!styleString) return style;
+    const style: React.CSSProperties = {}
+    if (!styleString) return style
 
-    styleString.split(';').forEach(rule => {
-      const [property, value] = rule.split(':').map(s => s.trim());
+    styleString.split(';').forEach((rule) => {
+      const [property, value] = rule.split(':').map((s) => s.trim())
       if (property && value) {
         const camelCaseProperty = property.replace(/-([a-z])/g, (_, letter) =>
           letter.toUpperCase()
-        );
-        (style as any)[camelCaseProperty] = value;
+        )
+        ;(style as any)[camelCaseProperty] = value
       }
-    });
+    })
 
-    return style;
-  };
+    return style
+  }
 
   const performWorkerOperation = async (
     endpoint: string,
     setLoading: (loading: boolean) => void,
     operationName: string
   ) => {
-    const enabledWorkers = workers.filter(worker => worker.enabled);
+    const enabledWorkers = workers.filter((worker) => worker.enabled)
 
     if (enabledWorkers.length === 0) {
-      console.log(`No enabled workers for ${operationName}`);
-      toastService.warn('No Workers', 'No enabled workers available for this operation');
-      return;
+      console.log(`No enabled workers for ${operationName}`)
+      toastService.warn(
+        'No Workers',
+        'No enabled workers available for this operation'
+      )
+      return
     }
 
-    setLoading(true);
+    setLoading(true)
 
     const results = await Promise.allSettled(
-      enabledWorkers.map(async worker => {
-        const workerUrl = worker.connection || `http://${worker.host}:${worker.port}`;
-        const url = `${workerUrl}${endpoint}`;
+      enabledWorkers.map(async (worker) => {
+        const workerUrl =
+          worker.connection || `http://${worker.host}:${worker.port}`
+        const url = `${workerUrl}${endpoint}`
 
         try {
           const response = await fetch(url, {
             method: 'POST',
             mode: 'cors',
             headers: { 'Content-Type': 'application/json' },
-            signal: AbortSignal.timeout(10000), // 10 second timeout
-          });
+            signal: AbortSignal.timeout(10000) // 10 second timeout
+          })
 
           if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`)
           }
 
-          console.log(`${operationName} successful on worker ${worker.name}`);
-          return { worker, success: true };
+          console.log(`${operationName} successful on worker ${worker.name}`)
+          return { worker, success: true }
         } catch (error) {
-          console.error(`${operationName} failed on worker ${worker.name}:`, error);
-          return { worker, success: false, error };
+          console.error(
+            `${operationName} failed on worker ${worker.name}:`,
+            error
+          )
+          return { worker, success: false, error }
         }
       })
-    );
+    )
 
     const failures = results
-      .filter(result => result.status === 'rejected' || !result.value.success)
-      .map(result => (result.status === 'fulfilled' ? result.value.worker.name : 'Unknown worker'));
+      .filter((result) => result.status === 'rejected' || !result.value.success)
+      .map((result) =>
+        result.status === 'fulfilled'
+          ? result.value.worker.name
+          : 'Unknown worker'
+      )
 
-    const successCount = enabledWorkers.length - failures.length;
+    const successCount = enabledWorkers.length - failures.length
 
     toastService.workerOperationResult(
       operationName,
       successCount,
       enabledWorkers.length,
       failures
-    );
+    )
 
-    setLoading(false);
-  };
+    setLoading(false)
+  }
 
   const handleInterruptWorkers = () => {
-    performWorkerOperation('/interrupt', setInterruptLoading, 'Interrupt operation');
-  };
+    void performWorkerOperation(
+      '/interrupt',
+      setInterruptLoading,
+      'Interrupt operation'
+    )
+  }
 
   const handleClearMemory = () => {
-    performWorkerOperation(
+    void performWorkerOperation(
       '/distributed/clear_memory',
       setClearMemoryLoading,
       'Clear memory operation'
-    );
-  };
+    )
+  }
 
   return (
     <div style={{ padding: '12px', borderBottom: '1px solid #444' }}>
@@ -103,7 +121,9 @@ export function ExecutionPanel() {
 
       {/* Status Info */}
       <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
-        <div style={parseStyle(UI_STYLES.infoBox)}>Workers Online: {selectedWorkers.length}</div>
+        <div style={parseStyle(UI_STYLES.infoBox)}>
+          Workers Online: {selectedWorkers.length}
+        </div>
 
         {executionState.isExecuting && (
           <div style={parseStyle(UI_STYLES.infoBox)}>
@@ -113,7 +133,8 @@ export function ExecutionPanel() {
 
         {executionState.totalBatches > 0 && (
           <div style={parseStyle(UI_STYLES.infoBox)}>
-            Batches: {executionState.completedBatches}/{executionState.totalBatches}
+            Batches: {executionState.completedBatches}/
+            {executionState.totalBatches}
           </div>
         )}
       </div>
@@ -127,7 +148,7 @@ export function ExecutionPanel() {
             backgroundColor: '#333',
             borderRadius: '3px',
             marginBottom: '12px',
-            overflow: 'hidden',
+            overflow: 'hidden'
           }}
         >
           <div
@@ -135,7 +156,7 @@ export function ExecutionPanel() {
               width: `${executionState.progress}%`,
               height: '100%',
               backgroundColor: '#4a7c4a',
-              transition: 'width 0.3s ease',
+              transition: 'width 0.3s ease'
             }}
           />
         </div>
@@ -147,11 +168,11 @@ export function ExecutionPanel() {
           style={{
             ...parseStyle(BUTTON_STYLES.base),
             ...parseStyle(BUTTON_STYLES.interrupt),
-            flex: 1,
+            flex: 1
           }}
           onClick={handleInterruptWorkers}
           disabled={interruptLoading || selectedWorkers.length === 0}
-          className='distributed-button'
+          className="distributed-button"
         >
           {interruptLoading ? 'Interrupting...' : 'Interrupt Workers'}
         </button>
@@ -160,11 +181,11 @@ export function ExecutionPanel() {
           style={{
             ...parseStyle(BUTTON_STYLES.base),
             ...parseStyle(BUTTON_STYLES.clearMemory),
-            flex: 1,
+            flex: 1
           }}
           onClick={handleClearMemory}
           disabled={clearMemoryLoading || selectedWorkers.length === 0}
-          className='distributed-button'
+          className="distributed-button"
         >
           {clearMemoryLoading ? 'Clearing...' : 'Clear Memory'}
         </button>
@@ -177,7 +198,7 @@ export function ExecutionPanel() {
             marginTop: '12px',
             padding: '8px',
             backgroundColor: '#7c4a4a',
-            borderRadius: '4px',
+            borderRadius: '4px'
           }}
         >
           <div
@@ -185,7 +206,7 @@ export function ExecutionPanel() {
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
-              marginBottom: '8px',
+              marginBottom: '8px'
             }}
           >
             <strong style={{ color: '#fff', fontSize: '12px' }}>
@@ -197,10 +218,10 @@ export function ExecutionPanel() {
                 backgroundColor: 'transparent',
                 border: '1px solid #999',
                 padding: '2px 8px',
-                fontSize: '10px',
+                fontSize: '10px'
               }}
               onClick={clearExecutionErrors}
-              className='distributed-button'
+              className="distributed-button"
             >
               Clear
             </button>
@@ -211,7 +232,7 @@ export function ExecutionPanel() {
               maxHeight: '120px',
               overflowY: 'auto',
               fontSize: '11px',
-              color: '#fff',
+              color: '#fff'
             }}
           >
             {executionState.errors.map((error, index) => (
@@ -233,12 +254,12 @@ export function ExecutionPanel() {
             borderRadius: '4px',
             color: '#fff',
             fontSize: '12px',
-            textAlign: 'center',
+            textAlign: 'center'
           }}
         >
           No workers are online and selected for distributed processing
         </div>
       )}
     </div>
-  );
+  )
 }

@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { ConnectionService } from '../services/connectionService';
-import { ConnectionInputProps, ConnectionInputState } from '../types/connection';
-import './ConnectionInput.css';
+import React, { useCallback, useEffect, useState } from 'react'
+
+import { ConnectionService } from '../services/connectionService'
+import { ConnectionInputProps, ConnectionInputState } from '../types/connection'
+import './ConnectionInput.css'
 
 export const ConnectionInput: React.FC<ConnectionInputProps> = ({
   value = '',
@@ -14,113 +15,130 @@ export const ConnectionInput: React.FC<ConnectionInputProps> = ({
   id,
   onChange,
   onValidation,
-  onConnectionTest,
+  onConnectionTest
 }) => {
-  const [inputValue, setInputValue] = useState(value);
-  const [state, setState] = useState<ConnectionInputState>('normal');
-  const [validationMessage, setValidationMessage] = useState<string>('');
-  const [messageType, setMessageType] = useState<'success' | 'error' | 'warning' | 'info'>('info');
+  const [inputValue, setInputValue] = useState(value)
+  const [state, setState] = useState<ConnectionInputState>('normal')
+  const [validationMessage, setValidationMessage] = useState<string>('')
+  const [messageType, setMessageType] = useState<
+    'success' | 'error' | 'warning' | 'info'
+  >('info')
 
-  const connectionService = ConnectionService.getInstance();
+  const connectionService = ConnectionService.getInstance()
 
   // Debounced validation
   useEffect(() => {
     if (!validateOnInput || !inputValue.trim()) {
-      setState('normal');
-      setValidationMessage('');
-      return;
+      setState('normal')
+      setValidationMessage('')
+      return
     }
 
-    setState('typing');
+    setState('typing')
 
     const timeoutId = setTimeout(async () => {
-      setState('validating');
+      setState('validating')
 
       try {
-        const result = await connectionService.validateConnection(inputValue, false);
-        const formatted = connectionService.formatValidationMessage(result);
+        const result = await connectionService.validateConnection(
+          inputValue,
+          false
+        )
+        const formatted = connectionService.formatValidationMessage(result)
 
-        setValidationMessage(formatted.message);
-        setMessageType(formatted.type);
+        setValidationMessage(formatted.message)
+        setMessageType(formatted.type)
         setState(
-          result.status === 'valid' ? 'valid' : result.status === 'invalid' ? 'invalid' : 'error'
-        );
+          result.status === 'valid'
+            ? 'valid'
+            : result.status === 'invalid'
+              ? 'invalid'
+              : 'error'
+        )
 
-        onValidation?.(result);
+        onValidation?.(result)
       } catch (error) {
-        setState('error');
-        setValidationMessage('✗ Validation failed');
-        setMessageType('error');
+        setState('error')
+        setValidationMessage('✗ Validation failed')
+        setMessageType('error')
       }
-    }, debounceMs);
+    }, debounceMs)
 
-    return () => clearTimeout(timeoutId);
-  }, [inputValue, validateOnInput, debounceMs, onValidation]);
+    return () => clearTimeout(timeoutId)
+  }, [inputValue, validateOnInput, debounceMs, onValidation])
 
   // Update input when value prop changes
   useEffect(() => {
-    setInputValue(value);
-  }, [value]);
+    setInputValue(value)
+  }, [value])
 
   const handleInputChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      const newValue = e.target.value;
-      setInputValue(newValue);
-      onChange?.(newValue);
+      const newValue = e.target.value
+      setInputValue(newValue)
+      onChange?.(newValue)
     },
     [onChange]
-  );
+  )
 
   const handlePresetClick = useCallback(
     (presetValue: string) => {
-      setInputValue(presetValue);
-      onChange?.(presetValue);
+      setInputValue(presetValue)
+      onChange?.(presetValue)
     },
     [onChange]
-  );
+  )
 
   const handleTestConnection = useCallback(async () => {
-    if (!inputValue.trim()) return;
+    if (!inputValue.trim()) return
 
-    setState('testing');
-    setValidationMessage('Testing connection...');
-    setMessageType('info');
+    setState('testing')
+    setValidationMessage('Testing connection...')
+    setMessageType('info')
 
     try {
-      const result = await connectionService.validateConnection(inputValue, true, 10);
-      const formatted = connectionService.formatValidationMessage(result);
+      const result = await connectionService.validateConnection(
+        inputValue,
+        true,
+        10
+      )
+      const formatted = connectionService.formatValidationMessage(result)
 
-      setValidationMessage(formatted.message);
-      setMessageType(formatted.type);
-      setState(result.status === 'valid' && result.connectivity?.reachable ? 'valid' : 'error');
+      setValidationMessage(formatted.message)
+      setMessageType(formatted.type)
+      setState(
+        result.status === 'valid' && result.connectivity?.reachable
+          ? 'valid'
+          : 'error'
+      )
 
-      onConnectionTest?.(result);
+      onConnectionTest?.(result)
     } catch (error) {
-      setState('error');
-      setValidationMessage('✗ Connection test failed');
-      setMessageType('error');
+      setState('error')
+      setValidationMessage('✗ Connection test failed')
+      setMessageType('error')
     }
-  }, [inputValue, onConnectionTest]);
+  }, [inputValue, onConnectionTest])
 
   const getInputClassName = () => {
-    const baseClass = 'connection-input';
-    const stateClass = `connection-input--${state}`;
-    const disabledClass = disabled ? 'connection-input--disabled' : '';
-    return `${baseClass} ${stateClass} ${disabledClass}`.trim();
-  };
+    const baseClass = 'connection-input'
+    const stateClass = `connection-input--${state}`
+    const disabledClass = disabled ? 'connection-input--disabled' : ''
+    return `${baseClass} ${stateClass} ${disabledClass}`.trim()
+  }
 
   const getMessageClassName = () => {
-    return `connection-message connection-message--${messageType}`;
-  };
+    return `connection-message connection-message--${messageType}`
+  }
 
-  const presets = connectionService.getConnectionPresets();
+  const presets = connectionService.getConnectionPresets()
 
   return (
-    <div className='connection-input-container'>
-      <div className='connection-input-wrapper'>
+    <div className="connection-input-container">
+      <div className="connection-input-wrapper">
         <input
           id={id}
-          type='text'
+          type="text"
           value={inputValue}
           onChange={handleInputChange}
           placeholder={placeholder}
@@ -130,12 +148,15 @@ export const ConnectionInput: React.FC<ConnectionInputProps> = ({
 
         {showTestButton && (
           <button
-            type='button'
+            type="button"
             onClick={handleTestConnection}
             disabled={
-              disabled || !inputValue.trim() || state === 'validating' || state === 'testing'
+              disabled ||
+              !inputValue.trim() ||
+              state === 'validating' ||
+              state === 'testing'
             }
-            className='connection-test-button'
+            className="connection-test-button"
           >
             {state === 'testing' ? 'Testing...' : 'Test'}
           </button>
@@ -143,14 +164,14 @@ export const ConnectionInput: React.FC<ConnectionInputProps> = ({
       </div>
 
       {showPresets && (
-        <div className='connection-presets'>
-          {presets.map(preset => (
+        <div className="connection-presets">
+          {presets.map((preset) => (
             <button
               key={preset.value}
-              type='button'
+              type="button"
               onClick={() => handlePresetClick(preset.value)}
               disabled={disabled}
-              className='connection-preset-button'
+              className="connection-preset-button"
             >
               {preset.label}
             </button>
@@ -158,7 +179,9 @@ export const ConnectionInput: React.FC<ConnectionInputProps> = ({
         </div>
       )}
 
-      {validationMessage && <div className={getMessageClassName()}>{validationMessage}</div>}
+      {validationMessage && (
+        <div className={getMessageClassName()}>{validationMessage}</div>
+      )}
     </div>
-  );
-};
+  )
+}

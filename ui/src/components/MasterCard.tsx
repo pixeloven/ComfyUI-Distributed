@@ -1,28 +1,36 @@
-import { useState } from 'react';
-import { MasterNode, WorkerStatus } from '@/types/worker';
-import { StatusDot } from './StatusDot';
-import { UI_COLORS } from '@/utils/constants';
+import { useState } from 'react'
+
+import { MasterNode, WorkerStatus } from '@/types/worker'
+import { UI_COLORS } from '@/utils/constants'
+
+import { StatusDot } from './StatusDot'
 
 interface MasterCardProps {
-  master: MasterNode;
-  onSaveSettings?: (settings: Partial<MasterNode>) => void;
+  master: MasterNode
+  onSaveSettings?: (settings: Partial<MasterNode>) => void
 }
 
-export const MasterCard: React.FC<MasterCardProps> = ({ master, onSaveSettings }) => {
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [editedMaster, setEditedMaster] = useState<Partial<MasterNode>>(master);
+export const MasterCard: React.FC<MasterCardProps> = ({
+  master,
+  onSaveSettings
+}) => {
+  const [isExpanded, setIsExpanded] = useState(false)
+  const [editedMaster, setEditedMaster] = useState<Partial<MasterNode>>(master)
 
   const handleSaveSettings = () => {
-    onSaveSettings?.(editedMaster);
-  };
+    onSaveSettings?.(editedMaster)
+  }
 
   const handleCancelSettings = () => {
-    setEditedMaster(master);
-  };
+    setEditedMaster(master)
+  }
 
-  const cudaInfo = master.cuda_device !== undefined ? `CUDA ${master.cuda_device} • ` : '';
+  const cudaInfo =
+    master.cuda_device !== undefined ? `CUDA ${master.cuda_device} • ` : ''
   const port =
-    master.port || window.location.port || (window.location.protocol === 'https:' ? '443' : '80');
+    master.port ||
+    window.location.port ||
+    (window.location.protocol === 'https:' ? '443' : '80')
 
   return (
     <div
@@ -32,7 +40,7 @@ export const MasterCard: React.FC<MasterCardProps> = ({ master, onSaveSettings }
         overflow: 'hidden',
         display: 'flex',
         background: UI_COLORS.BACKGROUND_DARK,
-        border: `1px solid ${UI_COLORS.BORDER_DARKER}`,
+        border: `1px solid ${UI_COLORS.BORDER_DARKER}`
       }}
     >
       {/* Checkbox Column - Master is always enabled */}
@@ -43,14 +51,14 @@ export const MasterCard: React.FC<MasterCardProps> = ({ master, onSaveSettings }
           alignItems: 'center',
           justifyContent: 'center',
           borderRight: `1px solid ${UI_COLORS.BORDER_DARKER}`,
-          background: 'rgba(0,0,0,0.1)',
+          background: 'rgba(0,0,0,0.1)'
         }}
       >
         <input
-          type='checkbox'
+          type="checkbox"
           checked={true}
           disabled={true}
-          title='Master node is always enabled'
+          title="Master node is always enabled"
           style={{ margin: 0, opacity: 0.6 }}
         />
       </div>
@@ -64,17 +72,26 @@ export const MasterCard: React.FC<MasterCardProps> = ({ master, onSaveSettings }
             alignItems: 'center',
             padding: '12px',
             cursor: 'pointer',
-            minHeight: '64px',
+            minHeight: '64px'
           }}
           onClick={() => setIsExpanded(!isExpanded)}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: '1' }}>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              flex: '1'
+            }}
+          >
             <StatusDot status={WorkerStatus.ONLINE} isPulsing={false} />
             <div style={{ flex: '1' }}>
-              <strong id='master-name-display'>{master.name || 'Master'}</strong>
+              <strong id="master-name-display">
+                {master.name || 'Master'}
+              </strong>
               <br />
               <small style={{ color: UI_COLORS.MUTED_TEXT }}>
-                <span id='master-cuda-info'>
+                <span id="master-cuda-info">
                   {cudaInfo}Port {port}
                 </span>
               </small>
@@ -92,7 +109,7 @@ export const MasterCard: React.FC<MasterCardProps> = ({ master, onSaveSettings }
                 fontSize: '12px',
                 fontWeight: '500',
                 backgroundColor: '#333',
-                textAlign: 'center',
+                textAlign: 'center'
               }}
             >
               Master
@@ -107,11 +124,11 @@ export const MasterCard: React.FC<MasterCardProps> = ({ master, onSaveSettings }
                 transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)',
                 transition: 'transform 0.2s ease',
                 userSelect: 'none',
-                padding: '4px',
+                padding: '4px'
               }}
-              onClick={e => {
-                e.stopPropagation();
-                setIsExpanded(!isExpanded);
+              onClick={(e) => {
+                e.stopPropagation()
+                setIsExpanded(!isExpanded)
               }}
             >
               ▶
@@ -127,22 +144,32 @@ export const MasterCard: React.FC<MasterCardProps> = ({ master, onSaveSettings }
               padding: '12px',
               background: UI_COLORS.BACKGROUND_DARKER,
               borderRadius: '4px',
-              border: `1px solid ${UI_COLORS.BACKGROUND_DARK}`,
+              border: `1px solid ${UI_COLORS.BACKGROUND_DARK}`
             }}
           >
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+            <div
+              style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}
+            >
+              <div
+                style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}
+              >
                 <label
                   htmlFor="master-name"
-                  style={{ fontSize: '12px', color: UI_COLORS.SECONDARY_TEXT, fontWeight: '500' }}
+                  style={{
+                    fontSize: '12px',
+                    color: UI_COLORS.SECONDARY_TEXT,
+                    fontWeight: '500'
+                  }}
                 >
                   Name:
                 </label>
                 <input
                   id="master-name"
-                  type='text'
+                  type="text"
                   value={editedMaster.name || ''}
-                  onChange={e => setEditedMaster({ ...editedMaster, name: e.target.value })}
+                  onChange={(e) =>
+                    setEditedMaster({ ...editedMaster, name: e.target.value })
+                  }
                   style={{
                     padding: '6px 10px',
                     background: UI_COLORS.BACKGROUND_DARK,
@@ -150,7 +177,7 @@ export const MasterCard: React.FC<MasterCardProps> = ({ master, onSaveSettings }
                     color: 'white',
                     fontSize: '12px',
                     borderRadius: '4px',
-                    transition: 'border-color 0.2s',
+                    transition: 'border-color 0.2s'
                   }}
                 />
               </div>
@@ -168,9 +195,9 @@ export const MasterCard: React.FC<MasterCardProps> = ({ master, onSaveSettings }
                     fontSize: '12px',
                     fontWeight: '500',
                     backgroundColor: '#4a7c4a',
-                    flex: '1',
+                    flex: '1'
                   }}
-                  className='distributed-button'
+                  className="distributed-button"
                 >
                   Save
                 </button>
@@ -186,9 +213,9 @@ export const MasterCard: React.FC<MasterCardProps> = ({ master, onSaveSettings }
                     fontSize: '12px',
                     fontWeight: '500',
                     backgroundColor: '#555',
-                    flex: '1',
+                    flex: '1'
                   }}
-                  className='distributed-button'
+                  className="distributed-button"
                 >
                   Cancel
                 </button>
@@ -198,5 +225,5 @@ export const MasterCard: React.FC<MasterCardProps> = ({ master, onSaveSettings }
         </div>
       </div>
     </div>
-  );
-};
+  )
+}

@@ -4,25 +4,25 @@
  * Integrates with ComfyUI's built-in toast notification system
  */
 
-export type ToastSeverity = 'success' | 'error' | 'warn' | 'info';
+export type ToastSeverity = 'success' | 'error' | 'warn' | 'info'
 
 interface ToastOptions {
-  severity: ToastSeverity;
-  summary: string;
-  detail: string;
-  life?: number; // Duration in milliseconds
+  severity: ToastSeverity
+  summary: string
+  detail: string
+  life?: number // Duration in milliseconds
 }
 
 export class ToastService {
-  private static instance: ToastService;
+  private static instance: ToastService
 
   private constructor() {}
 
   public static getInstance(): ToastService {
     if (!ToastService.instance) {
-      ToastService.instance = new ToastService();
+      ToastService.instance = new ToastService()
     }
-    return ToastService.instance;
+    return ToastService.instance
   }
 
   /**
@@ -30,21 +30,25 @@ export class ToastService {
    */
   public show(options: ToastOptions): void {
     try {
-      const app = (window as any).app;
+      const app = (window as any).app
       if (app?.extensionManager?.toast) {
         app.extensionManager.toast.add({
           severity: options.severity,
           summary: options.summary,
           detail: options.detail,
-          life: options.life || 3000,
-        });
+          life: options.life || 3000
+        })
       } else {
         // Fallback to console logging if toast system is not available
-        console.log(`[${options.severity.toUpperCase()}] ${options.summary}: ${options.detail}`);
+        console.log(
+          `[${options.severity.toUpperCase()}] ${options.summary}: ${options.detail}`
+        )
       }
     } catch (error) {
-      console.error('Failed to show toast notification:', error);
-      console.log(`[${options.severity.toUpperCase()}] ${options.summary}: ${options.detail}`);
+      console.error('Failed to show toast notification:', error)
+      console.log(
+        `[${options.severity.toUpperCase()}] ${options.summary}: ${options.detail}`
+      )
     }
   }
 
@@ -56,8 +60,8 @@ export class ToastService {
       severity: 'success',
       summary,
       detail,
-      life,
-    });
+      life
+    })
   }
 
   /**
@@ -68,8 +72,8 @@ export class ToastService {
       severity: 'error',
       summary,
       detail,
-      life: life || 5000, // Errors shown longer by default
-    });
+      life: life || 5000 // Errors shown longer by default
+    })
   }
 
   /**
@@ -80,8 +84,8 @@ export class ToastService {
       severity: 'warn',
       summary,
       detail,
-      life,
-    });
+      life
+    })
   }
 
   /**
@@ -92,8 +96,8 @@ export class ToastService {
       severity: 'info',
       summary,
       detail,
-      life,
-    });
+      life
+    })
   }
 
   /**
@@ -110,30 +114,34 @@ export class ToastService {
         `${operationName} Completed`,
         `Successfully completed on all ${successCount} worker(s)`,
         3000
-      );
+      )
     } else if (successCount > 0) {
       this.warn(
         `${operationName} Partial Success`,
         `Completed on ${successCount}/${totalCount} worker(s). Failed: ${failures.join(', ')}`,
         5000
-      );
+      )
     } else {
       this.error(
         `${operationName} Failed`,
         `Failed on all worker(s): ${failures.join(', ')}`,
         5000
-      );
+      )
     }
   }
 
   /**
    * Show connection test result notification
    */
-  public connectionTestResult(workerName: string, success: boolean, message: string): void {
+  public connectionTestResult(
+    workerName: string,
+    success: boolean,
+    message: string
+  ): void {
     if (success) {
-      this.success('Connection Test', `${workerName}: ${message}`, 3000);
+      this.success('Connection Test', `${workerName}: ${message}`, 3000)
     } else {
-      this.error('Connection Test Failed', `${workerName}: ${message}`, 5000);
+      this.error('Connection Test Failed', `${workerName}: ${message}`, 5000)
     }
   }
 
@@ -151,21 +159,21 @@ export class ToastService {
         start: 'started',
         stop: 'stopped',
         delete: 'deleted',
-        launch: 'launched',
-      }[action] || action;
+        launch: 'launched'
+      }[action] || action
 
     if (success) {
       this.success(
         `Worker ${actionPast.charAt(0).toUpperCase() + actionPast.slice(1)}`,
         `${workerName} has been ${actionPast}`,
         3000
-      );
+      )
     } else {
       this.error(
         `${action.charAt(0).toUpperCase() + action.slice(1)} Failed`,
         `Failed to ${action} ${workerName}${message ? `: ${message}` : ''}`,
         5000
-      );
+      )
     }
   }
 
@@ -173,7 +181,7 @@ export class ToastService {
    * Show validation error notifications
    */
   public validationError(field: string, message: string): void {
-    this.error('Validation Error', `${field}: ${message}`, 3000);
+    this.error('Validation Error', `${field}: ${message}`, 3000)
   }
 
   /**
@@ -185,14 +193,14 @@ export class ToastService {
   ): void {
     switch (type) {
       case 'offline_workers':
-        this.error('All Workers Offline', details, 5000);
-        break;
+        this.error('All Workers Offline', details, 5000)
+        break
       case 'master_unreachable':
-        this.error('Master Unreachable', details, 5000);
-        break;
+        this.error('Master Unreachable', details, 5000)
+        break
       case 'execution_failed':
-        this.error('Execution Failed', details, 5000);
-        break;
+        this.error('Execution Failed', details, 5000)
+        break
     }
   }
 }

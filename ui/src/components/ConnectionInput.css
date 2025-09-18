@@ -21,7 +21,9 @@
   color: #fff;
   font-family: 'Lucida Console', Monaco, monospace;
   font-size: 12px;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .connection-input:focus {

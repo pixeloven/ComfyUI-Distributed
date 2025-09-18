@@ -1,39 +1,43 @@
-import { STATUS_COLORS } from '@/utils/constants';
-import { StatusDotProps, WorkerStatus } from '@/types/worker';
+import { StatusDotProps, WorkerStatus } from '@/types/worker'
+import { STATUS_COLORS } from '@/utils/constants'
 
 const getStatusColor = (status: WorkerStatus): string => {
   switch (status) {
     case WorkerStatus.ONLINE:
-      return STATUS_COLORS.ONLINE_GREEN;
+      return STATUS_COLORS.ONLINE_GREEN
     case WorkerStatus.OFFLINE:
-      return STATUS_COLORS.OFFLINE_RED;
+      return STATUS_COLORS.OFFLINE_RED
     case WorkerStatus.PROCESSING:
-      return STATUS_COLORS.PROCESSING_YELLOW;
+      return STATUS_COLORS.PROCESSING_YELLOW
     case WorkerStatus.DISABLED:
-      return STATUS_COLORS.DISABLED_GRAY;
+      return STATUS_COLORS.DISABLED_GRAY
     default:
-      return STATUS_COLORS.DISABLED_GRAY;
+      return STATUS_COLORS.DISABLED_GRAY
   }
-};
+}
 
 const getStatusTitle = (status: WorkerStatus): string => {
   switch (status) {
     case WorkerStatus.ONLINE:
-      return 'Online';
+      return 'Online'
     case WorkerStatus.OFFLINE:
-      return 'Offline';
+      return 'Offline'
     case WorkerStatus.PROCESSING:
-      return 'Processing';
+      return 'Processing'
     case WorkerStatus.DISABLED:
-      return 'Disabled';
+      return 'Disabled'
     default:
-      return 'Unknown';
+      return 'Unknown'
   }
-};
+}
 
-export const StatusDot: React.FC<StatusDotProps> = ({ status, isPulsing = false, size = 10 }) => {
-  const color = getStatusColor(status);
-  const title = getStatusTitle(status);
+export const StatusDot: React.FC<StatusDotProps> = ({
+  status,
+  isPulsing = false,
+  size = 10
+}) => {
+  const color = getStatusColor(status)
+  const title = getStatusTitle(status)
 
   return (
     <span
@@ -44,10 +48,10 @@ export const StatusDot: React.FC<StatusDotProps> = ({ status, isPulsing = false,
         borderRadius: '50%',
         backgroundColor: color,
         marginRight: '10px',
-        flexShrink: 0,
+        flexShrink: 0
       }}
       className={isPulsing ? 'status-pulsing' : ''}
       title={title}
     />
-  );
-};
+  )
+}

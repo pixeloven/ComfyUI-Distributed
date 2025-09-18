@@ -1,50 +1,52 @@
-import React, { useRef, useEffect } from 'react';
-import ReactDOM from 'react-dom/client';
-import App from '../App';
-import { PULSE_ANIMATION_CSS } from '@/utils/constants';
-import { ExecutionService } from '@/services/executionService';
+import React, { useEffect, useRef } from 'react'
+import ReactDOM from 'react-dom/client'
+
+import { ExecutionService } from '@/services/executionService'
+import { PULSE_ANIMATION_CSS } from '@/utils/constants'
+
+import App from '../App'
 
 declare global {
   interface Window {
-    app: any;
+    app: any
   }
 }
 
 export class ComfyUIDistributedExtension {
-  private reactRoot: any = null;
-  private statusCheckInterval: number | null = null;
-  private executionService: ExecutionService;
+  private reactRoot: any = null
+  private statusCheckInterval: number | null = null
+  private executionService: ExecutionService
 
   constructor() {
-    this.executionService = ExecutionService.getInstance();
-    this.injectStyles();
-    this.loadConfig().then(() => {
-      this.registerSidebarTab();
-      this.setupInterceptor();
-      this.loadManagedWorkers();
-      this.detectMasterIP();
-    });
+    this.executionService = ExecutionService.getInstance()
+    this.injectStyles()
+    void this.loadConfig().then(() => {
+      void this.registerSidebarTab()
+      void this.setupInterceptor()
+      void this.loadManagedWorkers()
+      void this.detectMasterIP()
+    })
   }
 
   private injectStyles() {
-    const style = document.createElement('style');
-    style.textContent = PULSE_ANIMATION_CSS;
-    document.head.appendChild(style);
+    const style = document.createElement('style')
+    style.textContent = PULSE_ANIMATION_CSS
+    document.head.appendChild(style)
   }
 
   private async loadConfig() {
     try {
-      const response = await fetch('/distributed/config');
-      await response.json();
+      const response = await fetch('/distributed/config')
+      await response.json()
     } catch (error) {
-      console.error('Failed to load distributed config:', error);
+      console.error('Failed to load distributed config:', error)
     }
   }
 
   private registerSidebarTab() {
     if (!window.app?.extensionManager) {
-      console.error('ComfyUI app not available');
-      return;
+      console.error('ComfyUI app not available')
+      return
     }
 
     window.app.extensionManager.registerSidebarTab({
@@ -54,112 +56,112 @@ export class ComfyUIDistributedExtension {
       tooltip: 'Distributed Control Panel',
       type: 'custom',
       render: (el: HTMLElement) => {
-        this.onPanelOpen();
-        return this.renderReactApp(el);
+        this.onPanelOpen()
+        return this.renderReactApp(el)
       },
       destroy: () => {
-        this.onPanelClose();
-      },
-    });
+        this.onPanelClose()
+      }
+    })
   }
 
   private renderReactApp(container: HTMLElement) {
     // Clear container
-    container.innerHTML = '';
+    container.innerHTML = ''
 
     // Create React root container
-    const rootDiv = document.createElement('div');
-    rootDiv.id = 'distributed-ui-root';
-    rootDiv.style.width = '100%';
-    rootDiv.style.height = '100%';
-    container.appendChild(rootDiv);
+    const rootDiv = document.createElement('div')
+    rootDiv.id = 'distributed-ui-root'
+    rootDiv.style.width = '100%'
+    rootDiv.style.height = '100%'
+    container.appendChild(rootDiv)
 
     // Mount React app
-    this.reactRoot = ReactDOM.createRoot(rootDiv);
-    this.reactRoot.render(React.createElement(App));
+    this.reactRoot = ReactDOM.createRoot(rootDiv)
+    this.reactRoot.render(React.createElement(App))
 
-    return container;
+    return container
   }
 
   private onPanelOpen() {
-    console.log('Distributed panel opened - starting status polling');
-    this.startStatusChecking();
+    console.log('Distributed panel opened - starting status polling')
+    this.startStatusChecking()
   }
 
   private onPanelClose() {
-    console.log('Distributed panel closed - stopping status polling');
-    this.stopStatusChecking();
+    console.log('Distributed panel closed - stopping status polling')
+    this.stopStatusChecking()
 
     if (this.reactRoot) {
-      this.reactRoot.unmount();
-      this.reactRoot = null;
+      this.reactRoot.unmount()
+      this.reactRoot = null
     }
   }
 
   public destroy() {
-    this.onPanelClose();
-    this.executionService.destroy();
+    this.onPanelClose()
+    this.executionService.destroy()
   }
 
   private startStatusChecking() {
-    if (this.statusCheckInterval) return;
+    if (this.statusCheckInterval) return
 
     this.statusCheckInterval = window.setInterval(() => {
       // Status checking will be handled by React components
-    }, 2000);
+    }, 2000)
   }
 
   private stopStatusChecking() {
     if (this.statusCheckInterval) {
-      clearInterval(this.statusCheckInterval);
-      this.statusCheckInterval = null;
+      clearInterval(this.statusCheckInterval)
+      this.statusCheckInterval = null
     }
   }
 
   private setupInterceptor() {
     // Initialize the execution service which sets up the queue prompt interceptor
-    this.executionService.initialize();
-    console.log('Distributed execution interceptor set up');
+    this.executionService.initialize()
+    console.log('Distributed execution interceptor set up')
   }
 
   private async loadManagedWorkers() {
     try {
-      const response = await fetch('/distributed/managed_workers');
-      const data = await response.json();
-      console.log('Loaded managed workers:', data);
+      const response = await fetch('/distributed/managed_workers')
+      const data = await response.json()
+      console.log('Loaded managed workers:', data)
     } catch (error) {
-      console.error('Failed to load managed workers:', error);
+      console.error('Failed to load managed workers:', error)
     }
   }
 
   private async detectMasterIP() {
     try {
-      const response = await fetch('/distributed/network_info');
-      const data = await response.json();
-      console.log('Network info:', data);
+      const response = await fetch('/distributed/network_info')
+      const data = await response.json()
+      console.log('Network info:', data)
     } catch (error) {
-      console.error('Failed to detect master IP:', error);
+      console.error('Failed to detect master IP:', error)
     }
   }
 }
 
 // Export component for direct React usage
 export function ComfyUIIntegration() {
-  const extensionRef = useRef<ComfyUIDistributedExtension | null>(null);
+  const extensionRef = useRef<ComfyUIDistributedExtension | null>(null)
 
   useEffect(() => {
     // Initialize extension when component mounts
     if (!extensionRef.current) {
-      extensionRef.current = new ComfyUIDistributedExtension();
+      extensionRef.current = new ComfyUIDistributedExtension()
     }
 
     return () => {
       // Cleanup on unmount
       if (extensionRef.current) {
-        extensionRef.current = null;
+        extensionRef.current = null
       }
-    };
-  }, []);
+    }
+  }, [])
 
-  return null; // This component handles ComfyUI integration, no visual render
+  return null // This component handles ComfyUI integration, no visual render
 }

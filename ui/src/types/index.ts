@@ -8,20 +8,20 @@ export type {
   ConnectionState,
   AppState,
   ApiResponse,
-  StatusDotProps,
-} from './worker';
+  StatusDotProps
+} from './worker'
 
-export { WorkerStatus } from './worker';
+export { WorkerStatus } from './worker'
 
 export interface ComfyUIApp {
-  queuePrompt: (number: number, ...args: any[]) => Promise<any>;
+  queuePrompt: (number: number, ...args: any[]) => Promise<any>
   ui: {
     settings: {
-      addSetting: (setting: any) => void;
-    };
-  };
+      addSetting: (setting: any) => void
+    }
+  }
 }
 
 export interface ComfyUIApi {
-  queuePrompt: (number: number, ...args: any[]) => Promise<any>;
+  queuePrompt: (number: number, ...args: any[]) => Promise<any>
 }
