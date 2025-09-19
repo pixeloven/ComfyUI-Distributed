@@ -3,7 +3,7 @@ export default {
   transform: {
     '^.+\\.(ts|tsx)$': ['ts-jest', {
       useESM: true,
-      isolatedModules: true,
+      transpilation: true,
       tsconfig: {
         esModuleInterop: true,
         allowSyntheticDefaultImports: true,
