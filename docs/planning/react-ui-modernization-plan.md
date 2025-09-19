@@ -1,17 +1,19 @@
 # React UI Modernization Project Plan
 
-> **📁 Supporting Documentation**: This is the master planning document. Detailed analysis and feature comparisons are available in [`/docs/planning/react-ui-modernization/`](react-ui-modernization/) directory.
-
 ## Overview
 Transform ComfyUI-Distributed's frontend from vanilla JavaScript to a modern React-based architecture, improving maintainability, developer experience, and user interface capabilities.
 
 ## Current State Analysis
-- **Legacy codebase**: 11 vanilla JavaScript files (~200KB)
+- **Legacy codebase**: 11 vanilla JavaScript files (~200KB total)
+- **Key Components**:
+  - `main.js` (55KB) - Primary UI integration
+  - `ui.js` (51KB) - Worker management interface
+  - `connectionInput.js` (14KB) - Connection management UI
+  - `executionUtils.js` (26KB) - Workflow execution utilities
+  - `sidebarRenderer.js` (16KB) - Sidebar UI components
 - **React implementation**: 23% complete (16/70 features implemented)
 - **Status**: Basic UI functional, **core distributed functionality missing**
 - **Production readiness**: ❌ Not ready (see detailed analysis below)
-
-> **📊 Detailed Feature Analysis**: See [`react-ui-modernization/feature-comparison-matrix.md`](react-ui-modernization/feature-comparison-matrix.md) for comprehensive feature-by-feature comparison.
 
 ## Project Phases
 
@@ -99,7 +101,7 @@ Transform ComfyUI-Distributed's frontend from vanilla JavaScript to a modern Rea
 - [x] Add basic worker settings management
 - [x] Establish React app ComfyUI integration
 
-**Current State**: Basic worker management UI is functional but **many critical features missing** (see Feature Gap Analysis)
+**Current State**: Basic worker management UI is functional but **many critical features missing**
 
 ### Phase 7: Feature Parity with Legacy UI 🔄 IN PROGRESS
 **Goal**: Achieve 100% functional parity with the existing legacy vanilla JavaScript UI
@@ -125,7 +127,7 @@ Transform ComfyUI-Distributed's frontend from vanilla JavaScript to a modern Rea
 - [x] Auto-worker creation (master port +1, no dialog) *(completed)*
 - [x] Visual worker type differentiation *(completed)*
 
-**Remaining Gap Closure (3-Phase Plan):**
+**Remaining Gap Closure:**
 
 **Phase 1: Complete Known Gaps**
 - [ ] Master card inline form (Name, Host only - matching legacy)
@@ -133,7 +135,7 @@ Transform ComfyUI-Distributed's frontend from vanilla JavaScript to a modern Rea
 - [ ] Audit and implement any missing worker testing functions
 - [ ] Final visual consistency check (spacing, colors, layout)
 
-**Phase 2: Behavioral Test Suite (Modified Option C)**
+**Phase 2: Behavioral Test Suite**
 - [ ] API call equivalence testing (both UIs make identical backend requests)
 - [ ] User flow validation (same inputs produce same outputs)
 - [ ] Network request comparison (endpoints, payloads, responses)
@@ -144,7 +146,7 @@ Transform ComfyUI-Distributed's frontend from vanilla JavaScript to a modern Rea
 - [ ] Final state comparison (user-visible outcomes)
 - [ ] Edge case and error condition verification
 
-**Success Criteria**: React UI can perform every function that the legacy UI can perform, with identical behavior and user experience. Behavioral testing confirms 100% functional parity.
+**Success Criteria**: React UI can perform every function that the legacy UI can perform, with identical behavior and user experience.
 
 ### Phase 8: Automated Testing Suite 📝 PLANNED
 **Goal**: Implement comprehensive testing to verify feature parity and prevent regressions
@@ -212,6 +214,44 @@ Behavioral testing approach (not DOM comparison) since React and vanilla JS prod
 - [ ] Remove old build artifacts and directories
 - [ ] Conduct final performance validation
 
+## Technical Considerations
+
+### Dependencies
+**Core:**
+- React 18+
+- TypeScript 5+
+- Vite (build system)
+- ComfyUI type definitions
+
+**State Management:**
+- React Context (lightweight) or Zustand (if complex state needed)
+
+**Styling:**
+- CSS Modules or Tailwind CSS (match ComfyUI's styling)
+- Maintain existing visual design language
+
+### Migration Strategy
+**Parallel Development:**
+- Keep existing JS files during migration
+- Add feature flag to switch between old/new UI
+- Gradual feature-by-feature migration
+
+**Backwards Compatibility:**
+- Maintain all existing API contracts
+- Ensure existing workflows continue working
+- Preserve configuration file formats
+
+### Risk Mitigation
+**High Risk Areas:**
+- ComfyUI extension registration and lifecycle
+- Real-time WebSocket/polling for worker status
+- Large state management (worker lists, execution queues)
+
+**Mitigation Strategies:**
+- Create minimal viable React version first
+- Extensive testing with actual ComfyUI workflows
+- Fallback mechanism to vanilla JS if needed
+
 ## Success Criteria
 **Functional Requirements:**
 - [ ] All existing functionality preserved and enhanced
@@ -234,7 +274,7 @@ Behavioral testing approach (not DOM comparison) since React and vanilla JS prod
 - [ ] Intuitive worker management
 - [ ] Clear error handling and messaging
 
-## Next Steps
+## Current Status & Next Steps
 
 ### 🎯 REFINED SCOPE: PARITY-FOCUSED APPROACH
 
@@ -254,19 +294,6 @@ Focus exclusively on matching legacy UI functionality:
 **Estimated Time for Parity**: 10-15 days
 
 **Post-Parity Enhancement** (Phase 8+): UI/UX improvements, performance optimizations, new features beyond legacy capabilities
-
-### 📋 Supporting Documentation
-- **📊 Feature Comparison Matrix**: [`react-ui-modernization/feature-comparison-matrix.md`](react-ui-modernization/feature-comparison-matrix.md)
-  - 70 features compared side-by-side
-  - Current completion: 23% (16/70 features)
-  - Status tracking by category
-
-- **🔍 Missing Features Analysis**: [`react-ui-modernization/missing-features-analysis.md`](react-ui-modernization/missing-features-analysis.md)
-  - Detailed implementation roadmap (30-45 days)
-  - Priority rankings: Critical → High → Medium → Low
-  - Risk assessment and mitigation strategies
-
-- **📁 Complete Documentation Index**: [`react-ui-modernization/README.md`](react-ui-modernization/README.md)
 
 ### Recommendation
 **The React UI should NOT be used in production** until Phase 7 critical features are implemented. The legacy UI should remain the primary interface until at least 80% feature parity is achieved.
