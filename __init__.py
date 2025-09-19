@@ -50,7 +50,13 @@ from .distributed_upscale import (
     NODE_DISPLAY_NAME_MAPPINGS as UPSCALE_DISPLAY_NAME_MAPPINGS
 )
 
-WEB_DIRECTORY = "./dist"
+# Check environment variable to determine UI version
+CD_UI_VERSION = os.environ.get('CD_UI_VERSION', 'react')
+
+if CD_UI_VERSION == 'legacy':
+    WEB_DIRECTORY = "./web"
+else:
+    WEB_DIRECTORY = "./dist"
 
 ensure_config_exists()
 
