@@ -39,6 +39,11 @@ export default defineConfig(({ mode }) => ({
     copyLocales()
   ],
   publicDir: 'public', // Explicitly set public directory
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src'),
+    },
+  },
   build: {
     emptyOutDir: true,
     rollupOptions: {

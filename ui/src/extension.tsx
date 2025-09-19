@@ -1,4 +1,3 @@
-import 'public/locales'
 import ReactDOM from 'react-dom/client'
 
 import { PULSE_ANIMATION_CSS } from '@/utils/constants'

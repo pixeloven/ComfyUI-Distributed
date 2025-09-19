@@ -4,6 +4,9 @@ import { WorkerManagementPanel } from '@/components/WorkerManagementPanel'
 import { createApiClient } from '@/services/apiClient'
 import { useAppStore } from '@/stores/appStore'
 
+// Initialize i18next
+import '../public/locales'
+
 // Initialize API client
 const apiClient = createApiClient(window.location.origin)
 

@@ -1,7 +1,8 @@
 import { useState } from 'react'
 
 import { createApiClient } from '@/services/apiClient'
-import type { Worker, WorkerStatus } from '@/types'
+import type { Worker } from '@/types'
+import { WorkerStatus } from '@/types'
 import { UI_COLORS } from '@/utils/constants'
 
 import { StatusDot } from './StatusDot'

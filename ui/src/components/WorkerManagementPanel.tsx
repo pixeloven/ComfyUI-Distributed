@@ -3,7 +3,8 @@ import { useEffect, useState } from 'react'
 import { createApiClient } from '@/services/apiClient'
 import { ToastService } from '@/services/toastService'
 import { useAppStore } from '@/stores/appStore'
-import type { Worker, WorkerStatus } from '@/types'
+import type { Worker } from '@/types'
+import { WorkerStatus } from '@/types'
 import { UI_COLORS } from '@/utils/constants'
 
 import { MasterCard } from './MasterCard'
@@ -238,7 +239,7 @@ export function WorkerManagementPanel() {
     setLoading: (loading: boolean) => void,
     operationName: string
   ) => {
-    const enabledWorkers = workers.filter((worker) => worker.enabled)
+    const enabledWorkers = workers.filter((worker: Worker) => worker.enabled)
 
     if (enabledWorkers.length === 0) {
       toastService.warn(
@@ -251,7 +252,7 @@ export function WorkerManagementPanel() {
     setLoading(true)
 
     const results = await Promise.allSettled(
-      enabledWorkers.map(async (worker) => {
+      enabledWorkers.map(async (worker: Worker) => {
         const url = getWorkerUrl(worker, endpoint)
 
         try {
@@ -279,8 +280,8 @@ export function WorkerManagementPanel() {
     )
 
     const failures = results
-      .filter((result) => result.status === 'rejected' || !result.value.success)
-      .map((result) =>
+      .filter((result: PromiseSettledResult<{ worker: Worker; success: boolean; error?: unknown }>) => result.status === 'rejected' || (result.status === 'fulfilled' && !result.value.success))
+      .map((result: PromiseSettledResult<{ worker: Worker; success: boolean; error?: unknown }>) =>
         result.status === 'fulfilled'
           ? result.value.worker.name
           : 'Unknown worker'
@@ -458,7 +459,7 @@ export function WorkerManagementPanel() {
             </div>
           ) : (
             <>
-              {workers.map((worker) => (
+              {workers.map((worker: Worker) => (
                 <WorkerCard
                   key={worker.id}
                   worker={worker}
@@ -524,7 +525,7 @@ export function WorkerManagementPanel() {
               onClick={handleClearMemory}
               disabled={
                 clearMemoryLoading ||
-                workers.filter((w) => w.enabled).length === 0
+                workers.filter((w: Worker) => w.enabled).length === 0
               }
               title="Clear VRAM on all enabled worker GPUs (not master)"
               className="distributed-button"
@@ -548,7 +549,7 @@ export function WorkerManagementPanel() {
               onClick={handleInterruptWorkers}
               disabled={
                 interruptLoading ||
-                workers.filter((w) => w.enabled).length === 0
+                workers.filter((w: Worker) => w.enabled).length === 0
               }
               title="Cancel/interrupt execution on all enabled worker GPUs"
               className="distributed-button"

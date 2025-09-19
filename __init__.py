@@ -53,7 +53,7 @@ from .distributed_upscale import (
 # Switch between React and Legacy UI based on environment variable
 COMFY_UI_TYPE = os.environ.get('COMFY_UI_TYPE', 'legacy')
 if COMFY_UI_TYPE == 'react':
-    WEB_DIRECTORY = "./ui/dist"
+    WEB_DIRECTORY = "./dist"
 else:
     WEB_DIRECTORY = "./web"
 

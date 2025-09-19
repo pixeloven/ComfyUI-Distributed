@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 
 import { ToastService } from '@/services/toastService'
 import { useAppStore } from '@/stores/appStore'
+import type { Worker } from '@/types'
 import { BUTTON_STYLES, UI_STYLES } from '@/utils/constants'
 
 const toastService = ToastService.getInstance()
@@ -9,7 +10,7 @@ const toastService = ToastService.getInstance()
 export function ExecutionPanel() {
   const { executionState, workers, clearExecutionErrors } = useAppStore()
   const selectedWorkers = workers.filter(
-    (worker) => worker.enabled && worker.status === 'online'
+    (worker: Worker) => worker.enabled && worker.status === 'online'
   )
   const [interruptLoading, setInterruptLoading] = useState(false)
   const [clearMemoryLoading, setClearMemoryLoading] = useState(false)
@@ -36,7 +37,7 @@ export function ExecutionPanel() {
     setLoading: (loading: boolean) => void,
     operationName: string
   ) => {
-    const enabledWorkers = workers.filter((worker) => worker.enabled)
+    const enabledWorkers = workers.filter((worker: Worker) => worker.enabled)
 
     if (enabledWorkers.length === 0) {
       console.log(`No enabled workers for ${operationName}`)
@@ -50,7 +51,7 @@ export function ExecutionPanel() {
     setLoading(true)
 
     const results = await Promise.allSettled(
-      enabledWorkers.map(async (worker) => {
+      enabledWorkers.map(async (worker: Worker) => {
         const workerUrl =
           worker.connection || `http://${worker.host}:${worker.port}`
         const url = `${workerUrl}${endpoint}`
@@ -80,8 +81,8 @@ export function ExecutionPanel() {
     )
 
     const failures = results
-      .filter((result) => result.status === 'rejected' || !result.value.success)
-      .map((result) =>
+      .filter((result: PromiseSettledResult<{ worker: Worker; success: boolean; error?: unknown }>) => result.status === 'rejected' || (result.status === 'fulfilled' && !result.value.success))
+      .map((result: PromiseSettledResult<{ worker: Worker; success: boolean; error?: unknown }>) =>
         result.status === 'fulfilled'
           ? result.value.worker.name
           : 'Unknown worker'
@@ -235,7 +236,7 @@ export function ExecutionPanel() {
               color: '#fff'
             }}
           >
-            {executionState.errors.map((error, index) => (
+            {executionState.errors.map((error: string, index: number) => (
               <div key={index} style={{ marginBottom: '4px' }}>
                 {error}
               </div>

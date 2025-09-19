@@ -73,52 +73,52 @@ export const useAppStore = create<AppStore>()(
     logs: [],
 
     // Worker management actions
-    setWorkers: (workers) => set({ workers }),
+    setWorkers: (workers: DistributedWorker[]) => set({ workers }),
 
-    addWorker: (worker) =>
-      set((state) => ({
+    addWorker: (worker: DistributedWorker) =>
+      set((state: AppState) => ({
         workers: [...state.workers, worker]
       })),
 
-    updateWorker: (id, updates) =>
-      set((state) => ({
-        workers: state.workers.map((worker) =>
+    updateWorker: (id: string, updates: Partial<DistributedWorker>) =>
+      set((state: AppState) => ({
+        workers: state.workers.map((worker: DistributedWorker) =>
           worker.id === id ? { ...worker, ...updates } : worker
         )
       })),
 
-    removeWorker: (id) =>
-      set((state) => ({
-        workers: state.workers.filter((worker) => worker.id !== id)
+    removeWorker: (id: string) =>
+      set((state: AppState) => ({
+        workers: state.workers.filter((worker: DistributedWorker) => worker.id !== id)
       })),
 
-    setWorkerStatus: (id, status) => get().updateWorker(id, { status }),
+    setWorkerStatus: (id: string, status: WorkerStatus) => get().updateWorker(id, { status }),
 
-    toggleWorker: (id) =>
-      set((state) => ({
-        workers: state.workers.map((worker) =>
+    toggleWorker: (id: string) =>
+      set((state: AppState) => ({
+        workers: state.workers.map((worker: DistributedWorker) =>
           worker.id === id ? { ...worker, enabled: !worker.enabled } : worker
         )
       })),
 
-    getEnabledWorkers: () => get().workers.filter((worker) => worker.enabled),
+    getEnabledWorkers: () => get().workers.filter((worker: DistributedWorker) => worker.enabled),
 
     // Master management actions
-    setMaster: (master) => set({ master }),
+    setMaster: (master: MasterNode) => set({ master }),
 
-    updateMaster: (updates) =>
-      set((state) => ({
+    updateMaster: (updates: Partial<MasterNode>) =>
+      set((state: AppState) => ({
         master: state.master ? { ...state.master, ...updates } : undefined
       })),
 
     // Execution state actions
-    setExecutionState: (executionState) =>
-      set((state) => ({
+    setExecutionState: (executionState: Partial<ExecutionState>) =>
+      set((state: AppState) => ({
         executionState: { ...state.executionState, ...executionState }
       })),
 
     startExecution: () =>
-      set((state) => ({
+      set((state: AppState) => ({
         executionState: {
           ...state.executionState,
           isExecuting: true,
@@ -130,15 +130,15 @@ export const useAppStore = create<AppStore>()(
       })),
 
     stopExecution: () =>
-      set((state) => ({
+      set((state: AppState) => ({
         executionState: {
           ...state.executionState,
           isExecuting: false
         }
       })),
 
-    updateProgress: (completed, total) =>
-      set((state) => ({
+    updateProgress: (completed: number, total: number) =>
+      set((state: AppState) => ({
         executionState: {
           ...state.executionState,
           completedBatches: completed,
@@ -147,8 +147,8 @@ export const useAppStore = create<AppStore>()(
         }
       })),
 
-    addExecutionError: (error) =>
-      set((state) => ({
+    addExecutionError: (error: string) =>
+      set((state: AppState) => ({
         executionState: {
           ...state.executionState,
           errors: [...state.executionState.errors, error]
@@ -156,7 +156,7 @@ export const useAppStore = create<AppStore>()(
       })),
 
     clearExecutionErrors: () =>
-      set((state) => ({
+      set((state: AppState) => ({
         executionState: {
           ...state.executionState,
           errors: []
@@ -164,28 +164,28 @@ export const useAppStore = create<AppStore>()(
       })),
 
     // Connection state actions
-    setConnectionState: (connectionState) =>
-      set((state) => ({
+    setConnectionState: (connectionState: Partial<ConnectionState>) =>
+      set((state: AppState) => ({
         connectionState: { ...state.connectionState, ...connectionState }
       })),
 
-    setMasterIP: (masterIP) =>
-      set((state) => ({
+    setMasterIP: (masterIP: string) =>
+      set((state: AppState) => ({
         connectionState: { ...state.connectionState, masterIP }
       })),
 
-    setConnectionStatus: (isConnected) =>
-      set((state) => ({
+    setConnectionStatus: (isConnected: boolean) =>
+      set((state: AppState) => ({
         connectionState: { ...state.connectionState, isConnected }
       })),
 
     // Config management
-    setConfig: (config) => set({ config }),
+    setConfig: (config: Config) => set({ config }),
     isDebugEnabled: () => get().config?.settings?.debug ?? false,
 
     // Logs
-    addLog: (log) =>
-      set((state) => ({
+    addLog: (log: string) =>
+      set((state: AppState) => ({
         logs: [...state.logs, log]
       })),
 

@@ -30,6 +30,11 @@ export default defineConfig(({ mode }) => ({
     react(),
     rewriteComfyImports({ isDev: mode === "development" })
   ],
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src'),
+    },
+  },
   build: {
     emptyOutDir: true,
     rollupOptions: {
