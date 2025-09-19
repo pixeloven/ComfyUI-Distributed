@@ -1,0 +1,58 @@
+{
+  "app": {
+    "title": "ComfyUI Distributed",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success"
+  },
+  "connection": {
+    "title": "Master Connection",
+    "masterIP": "Master IP Address",
+    "placeholder": "localhost or IP address",
+    "connect": "Connect",
+    "connecting": "Testing...",
+    "connected": "Connected",
+    "error": "Error: {{message}}",
+    "success": "Connected to {{ip}}"
+  },
+  "execution": {
+    "title": "Execution Control",
+    "workersOnline": "Workers Online: {{count}}",
+    "progress": "Progress: {{percent}}%",
+    "batches": "Batches: {{completed}}/{{total}}",
+    "interrupt": "Interrupt Workers",
+    "clearMemory": "Clear Memory",
+    "errors": "Execution Errors ({{count}})",
+    "clear": "Clear",
+    "noWorkers": "No workers are online and selected for distributed processing"
+  },
+  "workers": {
+    "title": "Worker Management",
+    "noWorkers": "No workers configured. Add workers in the configuration file.",
+    "status": {
+      "online": "Online",
+      "offline": "Offline",
+      "processing": "Processing",
+      "disabled": "Disabled",
+      "checking": "Checking status..."
+    },
+    "actions": {
+      "launch": "Launch",
+      "stop": "Stop",
+      "logs": "Logs",
+      "enable": "Enable/disable this worker",
+      "settings": "Worker Settings"
+    },
+    "info": {
+      "worker": "Worker {{id}}",
+      "local": "Local",
+      "pid": "PID: {{pid}}"
+    },
+    "settings": {
+      "autoLaunch": "Auto-launch with master",
+      "enableCors": "Enable CORS headers",
+      "additionalArgs": "Additional Arguments",
+      "placeholder": "--arg1 value1 --arg2 value2"
+    }
+  }
+}

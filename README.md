@@ -65,17 +65,10 @@ ComfyUI Distributed supports three types of workers:
    git clone https://github.com/robertvoy/ComfyUI-Distributed.git
    ```
 
-2. **Build the UI** (required for the React interface):
-   ```bash
-   cd ComfyUI-Distributed/ui
-   npm install
-   npm run build
-   ```
-
-3. **Restart ComfyUI**
+2. **Restart ComfyUI**
    - If you'll be using remote/cloud workers, add `--enable-cors-header` to your launch arguments on the master
 
-4. Read the [setup guide](/docs/worker-setup-guides.md) for adding workers
+3. Read the [setup guide](/docs/worker-setup-guides.md) for adding workers
 
 ---
 
