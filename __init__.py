@@ -50,13 +50,7 @@ from .distributed_upscale import (
     NODE_DISPLAY_NAME_MAPPINGS as UPSCALE_DISPLAY_NAME_MAPPINGS
 )
 
-# Switch between React and Legacy UI based on environment variable
-COMFY_UI_TYPE = os.environ.get('COMFY_UI_TYPE', 'legacy')
-if COMFY_UI_TYPE == 'react':
-    WEB_DIRECTORY = "./dist"
-else:
-    WEB_DIRECTORY = "./web"
-
+WEB_DIRECTORY = "./dist"
 
 ensure_config_exists()
 
